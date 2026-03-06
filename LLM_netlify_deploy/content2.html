@@ -1,0 +1,583 @@
+<!-- ================================================================
+     content2.html — LLM Foundations Advanced Chapters (06-14 + Interview)
+     ================================================================ -->
+
+<!-- ════ CHAPTER 06: PROMPT ENGINEERING ════ -->
+<section class="section" id="prompts">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 06</div>
+      <h2 class="section-title">Prompt Engineering</h2>
+      <p class="section-desc">The #1 most practical GenAI skill. The art of designing inputs that reliably get the best outputs from any LLM.</p>
+    </div>
+
+    <div class="phase-banner reveal">
+      <div class="phase-dot" style="color:#6366f1;background:#6366f1"></div>
+      <div><h3>Phase 2 — Core Skills</h3><p>You now understand the machine. Let&apos;s learn to communicate with it effectively.</p></div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">📝</div>
+      <h3>Message Roles: System, User, Assistant</h3>
+      <p>Modern LLMs use a <strong>chat format</strong> with three roles that control behavior:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Role</th><th>Purpose</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><strong>system</strong></td><td>Sets personality, rules, constraints</td><td>"You are a medical expert. Always cite sources. Never guess."</td></tr>
+          <tr><td><strong>user</strong></td><td>The human&apos;s message or question</td><td>"What causes migraines?"</td></tr>
+          <tr><td><strong>assistant</strong></td><td>LLM&apos;s response (also used for conversation history)</td><td>"Migraines are caused by..."</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code-block"><span class="code-label">Python — Groq API</span>
+        <code><span class="kw">from</span> groq <span class="kw">import</span> Groq
+client = <span class="fn">Groq</span>(api_key=<span class="st">"your_key"</span>)
+
+response = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="st">"llama-3.3-70b-versatile"</span>,
+    messages=[
+        {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a Python expert. Be concise."</span>},
+        {<span class="st">"role"</span>: <span class="st">"user"</span>,   <span class="st">"content"</span>: <span class="st">"Explain list comprehensions"</span>},
+    ],
+    temperature=<span class="nm">0.3</span>, max_tokens=<span class="nm">500</span>,
+)
+<span class="bi">print</span>(response.choices[<span class="nm">0</span>].message.content)</code>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(16,185,129,.1);color:var(--green)">🎯</div>
+      <h3>Core Prompting Techniques</h3>
+      <div class="grid-2">
+        <div class="mini-card"><h4>Zero-Shot</h4><p>Ask directly with no examples. Relies on model&apos;s training. Best for simple, common tasks.<br><code>"Classify as positive/negative: 'I love this!'"</code></p></div>
+        <div class="mini-card"><h4>Few-Shot</h4><p>Provide 2-5 examples to establish the pattern. Dramatically improves consistency.<br><code>"Great→Positive\nTerrible→Negative\nNice→?"</code></p></div>
+        <div class="mini-card"><h4>Chain-of-Thought (CoT)</h4><p>Instruct the model to reason step-by-step. Essential for math and logic tasks.<br><code>"Think step by step. If John has 3 apples..."</code></p></div>
+        <div class="mini-card"><h4>Tree-of-Thought (ToT)</h4><p>Explore multiple reasoning paths simultaneously, then pick the best. Better than single chain for complex problems.</p></div>
+        <div class="mini-card"><h4>Role Prompting</h4><p>Assign a specific persona to get domain-specific responses.<br><code>"You are a senior software architect with 20 years of experience..."</code></p></div>
+        <div class="mini-card"><h4>Context Injection (RAG)</h4><p>Provide retrieved documents as context. The foundation of all RAG systems.<br><code>"Based on this context: [docs]\nAnswer: [question]"</code></p></div>
+      </div>
+      <div class="callout interview">
+        <div class="callout-title">🎤 Interview Question</div>
+        <p><strong>"When would you use few-shot vs zero-shot prompting?"</strong></p>
+        <p><strong>Answer:</strong> Zero-shot for straightforward tasks where the model&apos;s pre-training is sufficient (simple classification, summarization). Few-shot when you need specific output formatting, domain-specific terminology, or when zero-shot gives inconsistent results. Few-shot costs more tokens but significantly improves reliability for complex or nuanced tasks. Chain-of-thought is essential for any multi-step reasoning — adding "Think step by step" to math problems can improve accuracy by 30-50%.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 07: SAMPLING ════ -->
+<section class="section" id="sampling">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 07</div>
+      <h2 class="section-title">Sampling &amp; Generation Control</h2>
+      <p class="section-desc">These parameters control HOW the LLM generates text. Know these to fine-tune output quality for any use case.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(236,72,153,.1);color:var(--pink)">🌡️</div>
+      <h3>Temperature — Controlling Randomness</h3>
+      <div class="diagram">The model predicts: "The capital of France is ___"
+
+Raw token probabilities:
+  "Paris"     → 90%
+  "Lyon"      → 5%
+  "a"         → 2%
+  "beautiful" → 1%
+  others      → 2%
+
+Temperature = 0.0  → Always "Paris" (greedy)           ✅ Use for RAG/facts
+Temperature = 0.7  → Usually "Paris", sometimes "Lyon" ✅ Use for chat
+Temperature = 1.0  → Proportional sampling              ✅ Use for creative
+Temperature = 2.0  → Even "beautiful" has a chance      ⚠️ Often incoherent</div>
+      <div class="code-block"><span class="code-label">Python</span>
+        <code><span class="kw">from</span> groq <span class="kw">import</span> Groq
+client = <span class="fn">Groq</span>(api_key=<span class="st">"your_key"</span>)
+prompt = <span class="st">"Write a one-sentence description of the moon."</span>
+
+<span class="kw">for</span> temp <span class="kw">in</span> [<span class="nm">0.0</span>, <span class="nm">0.5</span>, <span class="nm">1.0</span>, <span class="nm">1.5</span>]:
+    r = client.chat.completions.<span class="fn">create</span>(
+        model=<span class="st">"llama-3.3-70b-versatile"</span>,
+        messages=[{<span class="st">"role"</span>:<span class="st">"user"</span>,<span class="st">"content"</span>:prompt}],
+        temperature=temp, max_tokens=<span class="nm">60</span>)
+    <span class="bi">print</span>(<span class="st">f"Temp {temp}: {r.choices[0].message.content}"</span>)
+<span class="cm"># 0.0: "The moon is Earth's natural satellite."   ← Same every time
+# 1.5: "The moon dances like a pearl in velvet sky." ← Creative</span></code>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">🎰</div>
+      <h3>Top-K and Top-P (Nucleus) Sampling</h3>
+      <div class="grid-2">
+        <div class="mini-card"><h4>Top-K Sampling</h4><p>Only consider the <strong>K most likely tokens</strong>. K=1 = greedy (deterministic). K=50 = consider top 50 tokens. Simple but fixed — doesn&apos;t adapt to model confidence.</p></div>
+        <div class="mini-card"><h4>Top-P (Nucleus) Sampling</h4><p>Select tokens until cumulative probability reaches <strong>P</strong>. If P=0.9: include tokens until probabilities sum to 90%. More adaptive — fewer tokens when model is confident, more when uncertain.</p></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Parameter</th><th>Factual/RAG</th><th>General Chat</th><th>Creative Writing</th></tr></thead>
+        <tbody>
+          <tr><td><strong>temperature</strong></td><td>0.0 – 0.2</td><td>0.5 – 0.7</td><td>0.8 – 1.2</td></tr>
+          <tr><td><strong>top_p</strong></td><td>0.1 – 0.3</td><td>0.7 – 0.9</td><td>0.9 – 1.0</td></tr>
+          <tr><td><strong>top_k</strong></td><td>1 – 10</td><td>40 – 50</td><td>50 – 100</td></tr>
+          <tr><td><strong>max_tokens</strong></td><td>256 – 512</td><td>512 – 1024</td><td>1024 – 4096</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 08: CONTEXT & MEMORY ════ -->
+<section class="section" id="context">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 08</div>
+      <h2 class="section-title">Context Windows &amp; Memory</h2>
+      <p class="section-desc">The context window is the LLM&apos;s working memory. Understanding it is critical for building real applications.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(34,211,238,.1);color:var(--cyan)">📏</div>
+      <h3>Context Window — The Memory Limit</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Model</th><th>Context Window</th><th>≈ Words</th><th>≈ Pages</th></tr></thead>
+        <tbody>
+          <tr><td>GPT-3.5</td><td>16,385 tokens</td><td>~12,000</td><td>~40</td></tr>
+          <tr><td>GPT-4o / LLaMA 3</td><td>128,000 tokens</td><td>~96,000</td><td>~300</td></tr>
+          <tr><td>Claude 3.5 Sonnet</td><td>200,000 tokens</td><td>~150,000</td><td>~500</td></tr>
+          <tr><td>Gemini 1.5 Pro</td><td>2,000,000 tokens</td><td>~1.5M</td><td>~5,000</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warning">
+        <div class="callout-title">⚠️ Critical Understanding</div>
+        <p>Context window = input + output tokens combined. If GPT-4o has 128K context and your input uses 120K, only 8K tokens remain for the response. This is exactly why <strong>RAG exists</strong> — instead of dumping entire documents into context, retrieve only 2-3 relevant chunks (~1500 tokens) and leave room for a detailed answer.</p>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(168,85,247,.1);color:var(--purple)">🧠</div>
+      <h3>Memory Strategies in LLM Applications</h3>
+      <p>LLMs are <strong>stateless</strong> — each API call is independent. To maintain conversations, you must manage memory yourself.</p>
+      <div class="grid-2">
+        <div class="mini-card"><h4>1. Full History (Naive)</h4><p>Include all messages in every API call. Simple but hits context limit quickly. Good for short conversations (under 20 turns).</p></div>
+        <div class="mini-card"><h4>2. Sliding Window</h4><p>Keep last N messages only. Simple, predictable cost. Loses early context — user may need to repeat info.</p></div>
+        <div class="mini-card"><h4>3. Summary Memory</h4><p>Periodically summarize old conversation with LLM, store summary. Compress hours of chat to a few sentences. Most cost-efficient.</p></div>
+        <div class="mini-card"><h4>4. Vector Memory (RAG)</h4><p>Store all conversation chunks in a vector DB. Retrieve relevant past context on each turn. Best quality, most complex.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 09: TOOL CALLING ════ -->
+<section class="section" id="tools">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 09</div>
+      <h2 class="section-title">Function / Tool Calling</h2>
+      <p class="section-desc">How LLMs break out of the text box and interact with the real world — the foundation of all AI agents.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(245,158,11,.1);color:var(--orange)">🔧</div>
+      <h3>How Tool Calling Works</h3>
+      <div class="diagram">User: "What&apos;s the weather in Tokyo right now?"
+
+WITHOUT tools:
+  LLM: "I don&apos;t have access to real-time data..." ❌
+
+WITH tools (function calling):
+  Step 1: LLM receives tool definitions
+    tools = [{"name": "get_weather", "description": "...", "parameters": {"city": "string"}}]
+
+  Step 2: LLM generates structured tool call (NOT free text)
+    {"tool": "get_weather", "args": {"city": "Tokyo"}}
+
+  Step 3: YOUR CODE calls the actual weather API → "22°C, sunny"
+
+  Step 4: Result fed back to LLM as "tool result"
+
+  Step 5: LLM generates final answer:
+    "The current weather in Tokyo is 22°C and sunny!" ✅
+
+The LLM does NOT execute code — it generates INSTRUCTIONS for your code.</div>
+      <div class="code-block"><span class="code-label">Python — Groq Tool Calling</span>
+        <code><span class="kw">import</span> json
+<span class="kw">from</span> groq <span class="kw">import</span> Groq
+client = <span class="fn">Groq</span>(api_key=<span class="st">"your_key"</span>)
+
+tools = [{
+    <span class="st">"type"</span>: <span class="st">"function"</span>,
+    <span class="st">"function"</span>: {
+        <span class="st">"name"</span>: <span class="st">"get_weather"</span>,
+        <span class="st">"description"</span>: <span class="st">"Get current weather for a city"</span>,
+        <span class="st">"parameters"</span>: {
+            <span class="st">"type"</span>: <span class="st">"object"</span>,
+            <span class="st">"properties"</span>: {<span class="st">"city"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},
+            <span class="st">"required"</span>: [<span class="st">"city"</span>]
+        }
+    }
+}]
+
+response = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="st">"llama-3.3-70b-versatile"</span>,
+    messages=[{<span class="st">"role"</span>:<span class="st">"user"</span>,<span class="st">"content"</span>:<span class="st">"Weather in Tokyo?"</span>}],
+    tools=tools, tool_choice=<span class="st">"auto"</span>
+)
+
+<span class="cm"># Check if LLM wants to call a tool</span>
+msg = response.choices[<span class="nm">0</span>].message
+<span class="kw">if</span> msg.tool_calls:
+    call = msg.tool_calls[<span class="nm">0</span>]
+    args = json.<span class="fn">loads</span>(call.function.arguments)
+    <span class="bi">print</span>(<span class="st">f"LLM wants to call: {call.function.name}({args})"</span>)
+    <span class="cm"># Your code runs the actual function here</span></code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 10: FINE-TUNING ════ -->
+<section class="section" id="finetuning">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 10</div>
+      <h2 class="section-title">Fine-Tuning &amp; LoRA</h2>
+      <p class="section-desc">Customizing LLMs for your specific domain without training from scratch. From full fine-tuning to parameter-efficient LoRA and QLoRA.</p>
+    </div>
+
+    <div class="phase-banner reveal">
+      <div class="phase-dot" style="color:#ef4444;background:#ef4444"></div>
+      <div><h3>Phase 3 — Advanced Topics</h3><p>You now understand LLMs deeply. Let&apos;s master the techniques that power production AI systems.</p></div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(16,185,129,.1);color:var(--green)">🔬</div>
+      <h3>Fine-Tuning vs RAG — When to Use Which</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Aspect</th><th>RAG</th><th>Fine-Tuning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>What it changes</strong></td><td>What the model knows at query time</td><td>How the model behaves / speaks</td></tr>
+          <tr><td><strong>Training needed?</strong></td><td>No — just index documents</td><td>Yes — requires labeled data + GPU</td></tr>
+          <tr><td><strong>Cost</strong></td><td>Low (vector DB + embeddings)</td><td>High (GPU hours, data collection)</td></tr>
+          <tr><td><strong>Updates</strong></td><td>Real-time — add docs anytime</td><td>Expensive — retrain every update</td></tr>
+          <tr><td><strong>Best for</strong></td><td>Knowledge Q&amp;A, document search</td><td>Custom style, specific output format, domain vocabulary</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout tip"><div class="callout-title">💡 Pro Tip</div><p>RAG and fine-tuning are <strong>not mutually exclusive</strong>. Combine them: fine-tune for domain vocabulary and style, use RAG for up-to-date knowledge retrieval.</p></div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">📐</div>
+      <h3>LoRA — Low-Rank Adaptation (The Smart Way)</h3>
+      <p>Full fine-tuning updates all billions of parameters — very expensive. <strong>LoRA</strong> freezes the original weights and injects tiny trainable matrices.</p>
+      <div class="diagram">FULL FINE-TUNING: Update W (4096 × 4096 = 16M parameters per layer) 💸
+
+LORA: Freeze W, add two small matrices A and B
+  W_new = W + A × B    where A ∈ ℝ^(d×r), B ∈ ℝ^(r×d), rank r ≪ d
+
+Example: d=4096, rank r=16
+  A: 4096 × 16  =  65,536 params
+  B: 16 × 4096  =  65,536 params
+  Total LoRA:      131,072 params  ← 99.2% fewer than full fine-tuning!
+
+Multiple LoRA adapters can be trained for different tasks
+and swapped on the same base model — like plugin modules.</div>
+      <div class="grid-2">
+        <div class="mini-card"><h4>LoRA (Standard)</h4><p>Low-rank adapter matrices. Requires full-precision (FP16/BF16) base model loaded in GPU. ~2-4 GB VRAM per billion parameters. Best for mid-range GPUs (RTX 3090, A10).</p></div>
+        <div class="mini-card"><h4>QLoRA (Quantized)</h4><p>Base model loaded in <strong>4-bit</strong> precision (NF4), LoRA adapters in 16-bit. Fine-tune a 70B model on a single 24GB GPU. The technique that democratized LLM fine-tuning.</p></div>
+      </div>
+      <div class="code-block"><span class="code-label">Python — QLoRA with HuggingFace</span>
+        <code><span class="kw">from</span> transformers <span class="kw">import</span> AutoModelForCausalLM, BitsAndBytesConfig
+<span class="kw">from</span> peft <span class="kw">import</span> LoraConfig, get_peft_model
+
+<span class="cm"># Load model in 4-bit (QLoRA)</span>
+bnb_config = <span class="fn">BitsAndBytesConfig</span>(
+    load_in_4bit=<span class="kw">True</span>,
+    bnb_4bit_quant_type=<span class="st">"nf4"</span>,      <span class="cm"># NormalFloat4 quantization</span>
+    bnb_4bit_compute_dtype=<span class="st">"bfloat16"</span>
+)
+model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(
+    <span class="st">"meta-llama/Llama-3.1-8B-Instruct"</span>,
+    quantization_config=bnb_config, device_map=<span class="st">"auto"</span>
+)
+
+<span class="cm"># Configure LoRA</span>
+lora_config = <span class="fn">LoraConfig</span>(
+    r=<span class="nm">16</span>,           <span class="cm"># Rank — higher = more capacity, more params</span>
+    lora_alpha=<span class="nm">32</span>,  <span class="cm"># Scaling factor</span>
+    target_modules=[<span class="st">"q_proj"</span>, <span class="st">"k_proj"</span>, <span class="st">"v_proj"</span>, <span class="st">"o_proj"</span>],
+    lora_dropout=<span class="nm">0.05</span>, bias=<span class="st">"none"</span>, task_type=<span class="st">"CAUSAL_LM"</span>
+)
+model = <span class="fn">get_peft_model</span>(model, lora_config)
+model.<span class="fn">print_trainable_parameters</span>()
+<span class="cm"># trainable params: 8,388,608 || all params: 8,040,000,000 || 0.10%</span></code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 11: RLHF & ALIGNMENT ════ -->
+<section class="section" id="alignment">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 11</div>
+      <h2 class="section-title">RLHF, DPO &amp; Model Alignment</h2>
+      <p class="section-desc">How we teach LLMs to be helpful, harmless, and honest — the techniques behind ChatGPT and Claude&apos;s behavior.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(236,72,153,.1);color:var(--pink)">🎯</div>
+      <h3>RLHF — Reinforcement Learning from Human Feedback</h3>
+      <div class="timeline">
+        <div class="timeline-item"><div class="tl-badge">STEP 1</div><div class="tl-body"><h4>Pre-train LLM</h4><p>Train on massive text corpus — model learns to predict next tokens. Result: capable but unaligned.</p></div></div>
+        <div class="timeline-item"><div class="tl-badge">STEP 2</div><div class="tl-body"><h4>Supervised Fine-Tuning (SFT)</h4><p>Fine-tune on curated instruction-response pairs written by humans. Model learns basic instruction following.</p></div></div>
+        <div class="timeline-item"><div class="tl-badge">STEP 3</div><div class="tl-body"><h4>Train Reward Model</h4><p>Human annotators rank model outputs: "Response A is better than B." Train a neural network (reward model) to predict these human preferences.</p></div></div>
+        <div class="timeline-item"><div class="tl-badge">STEP 4</div><div class="tl-body"><h4>PPO Fine-Tuning</h4><p>Use Proximal Policy Optimization (reinforcement learning) to fine-tune LLM to maximize the reward model&apos;s score. Result: ChatGPT-like helpful behavior.</p></div></div>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">⚡</div>
+      <h3>DPO — The Simpler Alternative to RLHF</h3>
+      <p><strong>Direct Preference Optimization</strong> eliminates the need for a separate reward model. It directly optimizes the LLM using preference pairs (chosen vs rejected responses).</p>
+      <div class="grid-2">
+        <div class="mini-card"><h4>RLHF</h4><p>✅ High quality alignment<br>❌ Complex 4-stage pipeline<br>❌ Train separate reward model<br>❌ RL training is unstable<br>❌ Very compute-expensive</p></div>
+        <div class="mini-card"><h4>DPO ⭐ (Modern)</h4><p>✅ Same quality as RLHF<br>✅ Simple: just supervised training<br>✅ No reward model needed<br>✅ Stable training<br>✅ 3-5× cheaper compute</p></div>
+      </div>
+      <div class="callout interview"><div class="callout-title">🎤 Interview Question</div><p><strong>"What is RLHF and why did DPO replace it?"</strong></p><p><strong>Answer:</strong> RLHF trains a reward model from human preference comparisons, then uses PPO reinforcement learning to optimize the LLM against this reward model. It works but is complex (4 stages), unstable (RL is hard), and expensive (reward model + PPO). DPO (2023) showed you can reformulate RLHF as a supervised learning problem — just train directly on (prompt, chosen, rejected) triples without RL or a separate reward model. DPO achieves comparable or better alignment with far less complexity. Most modern models (LLaMA 3, Mistral) use DPO or variants like ORPO.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 12: AI AGENTS ════ -->
+<section class="section" id="agents">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 12</div>
+      <h2 class="section-title">AI Agents &amp; the ReAct Pattern</h2>
+      <p class="section-desc">The next frontier — LLMs that can plan, use tools, and autonomously complete multi-step tasks without constant human prompting.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(245,158,11,.1);color:var(--orange)">🤖</div>
+      <h3>What Makes an AI Agent?</h3>
+      <p>An agent is not just an LLM — it&apos;s an LLM plus an <strong>environment loop</strong>:</p>
+      <div class="diagram">TRADITIONAL LLM:       User Prompt → LLM → Response  (one-shot)
+
+AI AGENT LOOP:
+  User Goal: "Research the latest iPhone 17 specs and summarize them"
+       │
+  ┌────▼────────────────────────────────────────────────────┐
+  │  THINK: "I need to search the web for iPhone 17 specs"  │  ← LLM reasons
+  └────┬────────────────────────────────────────────────────┘
+       │
+  ┌────▼────────────────────────────────────────────────────┐
+  │  ACT: call search_web("iPhone 17 specs 2025")           │  ← Tool call
+  └────┬────────────────────────────────────────────────────┘
+       │ Tool returns: "Apple iPhone 17: 48MP camera, A19 chip..."
+  ┌────▼────────────────────────────────────────────────────┐
+  │  OBSERVE: got search results                            │  ← Process result
+  └────┬────────────────────────────────────────────────────┘
+       │
+  ┌────▼────────────────────────────────────────────────────┐
+  │  THINK: "I have enough info. Write the summary now."    │
+  └────┬────────────────────────────────────────────────────┘
+       │
+  Final Answer: "The iPhone 17 features..."               ✅
+
+This Thought → Action → Observation loop = ReAct Pattern</div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(16,185,129,.1);color:var(--green)">🛠️</div>
+      <h3>Agent Frameworks Comparison</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Framework</th><th>Best For</th><th>Complexity</th><th>Key Feature</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LangChain</strong></td><td>Getting started quickly, simple chains</td><td>Low</td><td>Largest ecosystem, most tutorials</td></tr>
+          <tr><td><strong>LangGraph</strong></td><td>Complex stateful workflows, production</td><td>Medium</td><td>Graph-based flow, loops, branching</td></tr>
+          <tr><td><strong>CrewAI</strong></td><td>Multi-agent collaboration, role-based</td><td>Medium</td><td>"Crews" of specialized agents</td></tr>
+          <tr><td><strong>AutoGen</strong></td><td>Agent conversations, code execution</td><td>Medium</td><td>Microsoft-built, strong for coding</td></tr>
+          <tr><td><strong>LlamaIndex</strong></td><td>Data-heavy agents, knowledge graphs</td><td>Medium</td><td>Best RAG + agent integration</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout interview"><div class="callout-title">🎤 Interview Question</div><p><strong>"What is the ReAct pattern and why is it important?"</strong></p><p><strong>Answer:</strong> ReAct (Reasoning + Acting) is an agent architecture where the LLM iteratively cycles through Thought (reasoning about what to do) → Action (calling a tool) → Observation (processing the tool result). This loop repeats until the task is complete. It&apos;s important because: (1) it grounds reasoning in real-world feedback, reducing hallucinations; (2) it handles tasks requiring multiple steps and different tools; (3) the reasoning trace provides transparency and debuggability. ReAct is the foundation of how LangChain agents, OpenAI Assistants, and most production agent systems work.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 13: LOCAL MODELS ════ -->
+<section class="section" id="local">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 13</div>
+      <h2 class="section-title">Local Models &amp; Quantization</h2>
+      <p class="section-desc">Run LLMs on your own machine for free, with privacy, and offline — using quantization and tools like Ollama.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(20,184,166,.1);color:var(--teal)">📦</div>
+      <h3>Quantization — Shrinking Models to Fit on Consumer Hardware</h3>
+      <p>Original LLM weights are stored as 32-bit or 16-bit floating point numbers. Quantization reduces precision to 8-bit or 4-bit integers.</p>
+      <div class="diagram">Model size comparison (LLaMA 3 8B):
+
+FP32 (original):    8B × 4 bytes  = 32 GB  ← Needs 2× A100 GPUs
+FP16/BF16:          8B × 2 bytes  = 16 GB  ← Needs 1× A100/A10 GPU
+INT8 quantized:     8B × 1 byte   =  8 GB  ← Fits RTX 3090/4090
+INT4 (GGUF Q4_K_M): 8B × 0.5B    =  4 GB  ← Fits in 8GB VRAM or RAM!
+
+Quality loss: FP32→INT4 causes ~1-3% quality drop on benchmarks
+For most practical tasks: completely acceptable trade-off</div>
+      <div class="code-block"><span class="code-label">Terminal — Run LLMs Locally with Ollama</span>
+        <code><span class="cm"># Install Ollama (Mac/Linux)</span>
+curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="cm"># Pull and run models (automatically downloads quantized GGUF)</span>
+ollama run llama3.3          <span class="cm"># LLaMA 3.3 70B (requires ~40GB RAM)</span>
+ollama run llama3.2          <span class="cm"># LLaMA 3.2 3B  (requires ~2GB RAM)</span>
+ollama run mistral           <span class="cm"># Mistral 7B    (requires ~4GB RAM)</span>
+ollama run deepseek-r1:8b    <span class="cm"># DeepSeek R1   (reasoning model!)</span>
+
+<span class="cm"># Use via Python (same API as OpenAI!)</span>
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+client = <span class="fn">OpenAI</span>(base_url=<span class="st">"http://localhost:11434/v1"</span>, api_key=<span class="st">"ollama"</span>)
+response = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="st">"llama3.2"</span>,
+    messages=[{<span class="st">"role"</span>:<span class="st">"user"</span>,<span class="st">"content"</span>:<span class="st">"Hello!"</span>}]
+)
+<span class="bi">print</span>(response.choices[<span class="nm">0</span>].message.content)</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ CHAPTER 14: EVALUATION ════ -->
+<section class="section" id="evaluation">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">Chapter 14</div>
+      <h2 class="section-title">Evaluation &amp; LLMOps</h2>
+      <p class="section-desc">How to measure if your LLM system is actually working, and how to run it reliably in production.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(168,85,247,.1);color:var(--purple)">📊</div>
+      <h3>Evaluation Metrics</h3>
+      <div class="grid-2">
+        <div class="mini-card"><h4>BLEU Score</h4><p>Measures n-gram overlap between generated and reference text. Range 0-1. Used for translation. Limitation: doesn&apos;t capture semantic meaning.</p></div>
+        <div class="mini-card"><h4>ROUGE</h4><p>Recall-Oriented Understudy for Gisting Evaluation. Used for summarization. ROUGE-L measures longest common subsequence.</p></div>
+        <div class="mini-card"><h4>Perplexity</h4><p>How surprised the model is by a test corpus. Lower = better. Used to compare language models. Formula: exp(average cross-entropy loss).</p></div>
+        <div class="mini-card"><h4>LLM-as-Judge</h4><p>Use GPT-4 or Claude to evaluate outputs on criteria like helpfulness, correctness, coherence. Most aligned with human preferences. Scalable alternative to human eval.</p></div>
+      </div>
+
+      <h3 style="margin-top:20px">RAG-Specific Metrics (RAGAS)</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Metric</th><th>What It Measures</th><th>Range</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Faithfulness</strong></td><td>Is the answer supported by the retrieved context? (no hallucinations)</td><td>0-1 (higher better)</td></tr>
+          <tr><td><strong>Answer Relevancy</strong></td><td>Does the answer actually address the question asked?</td><td>0-1 (higher better)</td></tr>
+          <tr><td><strong>Context Precision</strong></td><td>Are the retrieved chunks relevant (not noisy)?</td><td>0-1 (higher better)</td></tr>
+          <tr><td><strong>Context Recall</strong></td><td>Did retrieval find all the relevant information?</td><td>0-1 (higher better)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-icon" style="background:rgba(34,211,238,.1);color:var(--cyan)">🔧</div>
+      <h3>LLMOps — Production Checklist</h3>
+      <ul class="checklist">
+        <li><strong>Latency monitoring:</strong> Track p50, p95, p99 response times. Alert if p95 &gt; 5s.</li>
+        <li><strong>Cost tracking:</strong> Monitor token usage per request, per user, per feature.</li>
+        <li><strong>Output quality evals:</strong> Regular automated evals using LLM-as-judge on sampled outputs.</li>
+        <li><strong>Prompt versioning:</strong> Store prompts in version control, track changes and their impact.</li>
+        <li><strong>Fallback chains:</strong> If GPT-4o fails/times out, fall back to GPT-4o-mini automatically.</li>
+        <li><strong>Rate limiting:</strong> Prevent abuse, cost overruns with per-user and global limits.</li>
+        <li><strong>Caching:</strong> Semantic caching — same/similar questions return cached answers (90%+ hit rate typical).</li>
+        <li><strong>Guardrails:</strong> Input/output filtering for PII, toxicity, off-topic requests.</li>
+        <li><strong>Streaming:</strong> Stream tokens as they generate for better UX (eliminates perceived latency).</li>
+        <li><strong>Observability:</strong> Use LangSmith, Helicone, or MLflow to trace every LLM call end-to-end.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════ INTERVIEW PREP ════ -->
+<section class="section" id="interview">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">🎤 Mastery</div>
+      <h2 class="section-title">Interview Preparation — 20 Key Questions</h2>
+      <p class="section-desc">The most commonly asked GenAI/LLM interview questions with professional-grade answers. Master these to stand out.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="collapsible"><div class="collapsible-header">1. What is an LLM and how does it work at a high level?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>An LLM is a decoder-only Transformer trained on massive text corpora to predict the next token. "Large" = billions of parameters. Training objective: given tokens T1...Tn, maximize P(Tn+1 | T1...Tn). Through scale and diverse data, emergent capabilities appear — reasoning, coding, instruction following. Inference = auto-regressive generation: one token at a time, each token fed back as input to predict the next. Temperature/top-p control sampling randomness.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">2. RAG vs Fine-tuning — when to use which?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p><strong>RAG:</strong> Best when answers need to come from specific, up-to-date documents. No training needed, citable sources, easy to update. Use for knowledge bases, doc Q&amp;A, enterprise search. <strong>Fine-tuning:</strong> Best when changing model behavior, style, or domain vocabulary. Needs labeled data + GPU. Use for specific output formats, medical/legal jargon, consistent persona. Key: they&apos;re complementary — fine-tune for style, use RAG for knowledge.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">3. What are hallucinations and how do you prevent them?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>Hallucinations = LLM generating confident but factually incorrect output. Root cause: the model has learned to produce fluent text, not necessarily truthful text. Prevention: (1) RAG — ground responses in retrieved documents, (2) Low temperature — reduce randomness, (3) System prompt — "Only answer from provided context. Say 'I don&apos;t know' if unsure", (4) Self-consistency — generate multiple responses, take consensus, (5) Citation requirement — force model to cite sources, (6) Guardrails — post-process outputs with a fact-checker model.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">4. Explain the attention mechanism in detail.<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>Self-attention allows each token to attend to all other tokens. Each token projects to Q (query), K (key), V (value) via learned matrices. Attention scores = QK^T / √d_k. Softmax normalizes to probabilities. Output = weighted sum of V. Multi-head runs H parallel attention computations, each learning different relationship types (syntax, semantics, coreference). Causal masking prevents attending to future tokens, enabling auto-regressive generation. O(n²) complexity with sequence length is the main limitation for very long contexts.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">5. What is LoRA and how is it different from full fine-tuning?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>Full fine-tuning updates all billions of parameters — requires massive GPU memory and compute. LoRA (Low-Rank Adaptation) freezes original weights and adds small low-rank matrices A (d×r) and B (r×d) to each layer. Only train A and B. For rank r=16 and d=4096: 131K params vs 16M for full layer. 99%+ reduction in trainable parameters. Benefits: Much less VRAM, faster training, can train multiple LoRA adapters for different tasks on same base model, adapters are easily swappable. QLoRA extends this by quantizing the base model to 4-bit, enabling 70B fine-tuning on a consumer GPU.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">6. Explain BPE tokenization.<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>Byte Pair Encoding starts with a character-level vocabulary. Iteratively finds the most frequent adjacent pair in training corpus, merges them into a new token, and adds to vocabulary. Repeat until reaching target vocabulary size (e.g., 50K for GPT-4 uses 100,277). Result: common words are single tokens, rare words are decomposed into known subwords. "ChatGPTification" → ["Chat","G","PT","ific","ation"]. Benefits: fixed vocabulary handles any word, balances vocabulary size and sequence length, naturally handles multiple languages by sharing subword pieces.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">7. What is RLHF and what problem does it solve?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>A pre-trained LLM learns to predict text, not to be helpful or safe. RLHF (Reinforcement Learning from Human Feedback) aligns the model with human preferences. Process: (1) SFT on curated instruction-response pairs, (2) Human annotators rank model outputs, (3) Train reward model to predict human preferences, (4) Use PPO to fine-tune LLM to maximize reward score. Used in ChatGPT, Claude. DPO (2023) simplifies by directly optimizing from preference pairs without RL or a separate reward model — becoming the dominant approach today.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">8. How would you build a production RAG system?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p><strong>Ingestion Pipeline:</strong> Load docs → chunk (recursive character splitting, 512 tokens, 50 overlap) → embed (sentence-transformers or OpenAI) → store in vector DB (Pinecone/Weaviate/Qdrant) + metadata. <strong>Query Pipeline:</strong> Embed query → retrieve top-K chunks (cosine similarity) → rerank (cross-encoder) → inject into prompt → LLM generates answer. <strong>Production additions:</strong> Query expansion/HyDE, hybrid search (dense + BM25 sparse), caching semantic-similar queries, streaming responses, faithfulness eval with RAGAS, latency monitoring, fallback handling.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">9. Explain Mixture of Experts (MoE) architecture.<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p>MoE replaces the dense FFN layer with N expert networks + a router network. The router selects top-K experts per token (typically K=2). Only activated experts process the token — other experts are idle. Result: model has N×(dense model params) total capacity but only activates K/N of them per token. Mixtral 8×7B: 56B total, 14B active. GPT-4: estimated ~1.8T total, ~200B active. Benefits: much higher model capacity without proportional compute increase. Challenge: load balancing — need auxiliary loss to ensure all experts get trained, not just 1-2 popular ones.</p></div></div></div>
+
+      <div class="collapsible"><div class="collapsible-header">10. What is the difference between encoder-only, decoder-only, and encoder-decoder Transformers?<span class="arrow">▼</span></div><div class="collapsible-body"><div class="collapsible-body-inner"><p><strong>Encoder-only (BERT):</strong> Bidirectional attention — each token attends to all others. Best for understanding tasks (classification, NER, embeddings). Cannot generate text. <strong>Decoder-only (GPT, LLaMA, Claude):</strong> Causal masking — each token only attends to previous. Enables auto-regressive generation. Dominant for modern LLMs due to scalability. <strong>Encoder-decoder (T5, BART):</strong> Encoder reads full input bidirectionally, decoder generates output attending to encoder states via cross-attention. Best for seq2seq: translation, summarization. Most new LLMs use decoder-only because it scales better and naturally handles in-context learning.</p></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ GLOSSARY ════ -->
+<section class="section" id="glossary">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-chapter">📚 Reference</div>
+      <h2 class="section-title">Complete Glossary</h2>
+      <p class="section-desc">Every important term defined in one place. Bookmark this for quick reference.</p>
+    </div>
+    <div class="card reveal">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Term</th><th>Definition</th><th>Where Used</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Token</strong></td><td>Smallest text unit processed by LLM (~4 chars in English)</td><td>All LLM interactions, pricing</td></tr>
+          <tr><td><strong>BPE</strong></td><td>Byte Pair Encoding — iterative subword tokenization algorithm</td><td>GPT, LLaMA tokenizers</td></tr>
+          <tr><td><strong>Embedding</strong></td><td>Dense vector representing semantic meaning of text</td><td>RAG, search, clustering</td></tr>
+          <tr><td><strong>Cosine Similarity</strong></td><td>Angle-based similarity between vectors, range -1 to 1</td><td>Vector search, RAG retrieval</td></tr>
+          <tr><td><strong>Self-Attention</strong></td><td>Mechanism for tokens to relate to all other tokens</td><td>Every Transformer layer</td></tr>
+          <tr><td><strong>QKV</strong></td><td>Query, Key, Value — the three components of attention</td><td>Attention computation</td></tr>
+          <tr><td><strong>Multi-Head Attention</strong></td><td>H parallel attention computations learning different relations</td><td>Transformer blocks</td></tr>
+          <tr><td><strong>Causal Masking</strong></td><td>Prevents attending to future tokens during generation</td><td>Decoder-only models</td></tr>
+          <tr><td><strong>Positional Encoding</strong></td><td>Adds position information to token embeddings</td><td>Transformer input</td></tr>
+          <tr><td><strong>RoPE</strong></td><td>Rotary Position Embeddings — modern position encoding</td><td>LLaMA, GPT-NeoX</td></tr>
+          <tr><td><strong>Context Window</strong></td><td>Max tokens (input+output) an LLM can process at once</td><td>Prompt design, RAG chunking</td></tr>
+          <tr><td><strong>Temperature</strong></td><td>Controls randomness of token sampling (0=deterministic)</td><td>All generation API calls</td></tr>
+          <tr><td><strong>Top-P / Nucleus</strong></td><td>Sample from smallest token set with cumulative prob ≥ P</td><td>Generation control</td></tr>
+          <tr><td><strong>Hallucination</strong></td><td>Model generating confident but factually incorrect output</td><td>Quality assurance</td></tr>
+          <tr><td><strong>RAG</strong></td><td>Retrieval-Augmented Generation — ground LLM with documents</td><td>Knowledge Q&amp;A systems</td></tr>
+          <tr><td><strong>Fine-tuning</strong></td><td>Further training pre-trained LLM on domain-specific data</td><td>Model customization</td></tr>
+          <tr><td><strong>LoRA</strong></td><td>Low-Rank Adaptation — efficient fine-tuning with tiny matrices</td><td>Custom model training</td></tr>
+          <tr><td><strong>QLoRA</strong></td><td>LoRA + 4-bit quantization for consumer GPU fine-tuning</td><td>Budget fine-tuning</td></tr>
+          <tr><td><strong>RLHF</strong></td><td>Reinforcement Learning from Human Feedback — alignment technique</td><td>ChatGPT, Claude training</td></tr>
+          <tr><td><strong>DPO</strong></td><td>Direct Preference Optimization — simpler RLHF alternative</td><td>Modern model alignment</td></tr>
+          <tr><td><strong>SFT</strong></td><td>Supervised Fine-Tuning on instruction-response pairs</td><td>Instruction following</td></tr>
+          <tr><td><strong>MoE</strong></td><td>Mixture of Experts — only subset of params active per token</td><td>GPT-4, Mixtral, DeepSeek</td></tr>
+          <tr><td><strong>Quantization</strong></td><td>Reducing weight precision (FP32→INT4) to shrink model size</td><td>Local deployment, efficiency</td></tr>
+          <tr><td><strong>GGUF</strong></td><td>GPT-Generated Unified Format — standard for local model files</td><td>Ollama, llama.cpp</td></tr>
+          <tr><td><strong>ReAct</strong></td><td>Reasoning + Acting — agent architecture pattern</td><td>AI agents, LangChain</td></tr>
+          <tr><td><strong>Function Calling</strong></td><td>LLM generating structured JSON to invoke external tools</td><td>AI agents, integrations</td></tr>
+          <tr><td><strong>Vector Database</strong></td><td>Database optimized for similarity search on embeddings</td><td>RAG, semantic search</td></tr>
+          <tr><td><strong>Perplexity</strong></td><td>How surprised model is by test data — lower is better</td><td>Model evaluation</td></tr>
+          <tr><td><strong>RAGAS</strong></td><td>Framework for evaluating RAG systems (faithfulness, recall, etc)</td><td>RAG quality measurement</td></tr>
+          <tr><td><strong>LLMOps</strong></td><td>MLOps practices adapted for LLM production deployments</td><td>Production AI systems</td></tr>
+          <tr><td><strong>Prompt Injection</strong></td><td>Attack where malicious input overrides system prompt</td><td>Security, guardrails</td></tr>
+          <tr><td><strong>Semantic Caching</strong></td><td>Cache LLM responses using embedding similarity matching</td><td>Cost optimization</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>

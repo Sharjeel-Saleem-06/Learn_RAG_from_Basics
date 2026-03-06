@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Foundations — Complete GenAI Learning Platform</title>
+  <meta name="description"
+    content="Master every LLM concept from tokenization to AI agents. Complete interactive guide with Python code, diagrams, and interview prep for GenAI engineers.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- ════════════ TOP HEADER ════════════ -->
+  <header class="top-header">
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+    <div class="header-brand">🧠 LLM Foundations</div>
+    <div class="header-badge">Zero → Expert</div>
+    <div class="header-progress-wrap">
+      <div class="header-progress-bar" id="readingProgress"></div>
+    </div>
+  </header>
+
+  <!-- ════════════ LAYOUT ════════════ -->
+  <div class="layout">
+
+    <!-- ── Sidebar ─────────────────────────── -->
+    <nav class="sidebar" id="sidebar">
+      <span class="sidebar-phase">📖 Getting Started</span>
+      <a href="#hero" class="sidebar-link active"><span class="ch-num">🏠</span>Overview</a>
+
+      <span class="sidebar-phase">🟢 Phase 1 · Foundations</span>
+      <a href="#tokenization" class="sidebar-link"><span class="ch-num">01</span>Tokenization & BPE</a>
+      <a href="#embeddings" class="sidebar-link"><span class="ch-num">02</span>Embeddings</a>
+      <a href="#attention" class="sidebar-link"><span class="ch-num">03</span>Attention Mechanism</a>
+      <a href="#transformers" class="sidebar-link"><span class="ch-num">04</span>Transformer Architecture</a>
+      <a href="#llm-types" class="sidebar-link"><span class="ch-num">05</span>LLM Types & Models</a>
+
+      <span class="sidebar-phase">🔵 Phase 2 · Core Skills</span>
+      <a href="#prompts" class="sidebar-link"><span class="ch-num">06</span>Prompt Engineering</a>
+      <a href="#sampling" class="sidebar-link"><span class="ch-num">07</span>Sampling & Generation</a>
+      <a href="#context" class="sidebar-link"><span class="ch-num">08</span>Context & Memory</a>
+      <a href="#tools" class="sidebar-link"><span class="ch-num">09</span>Function / Tool Calling</a>
+
+      <span class="sidebar-phase">🔴 Phase 3 · Advanced</span>
+      <a href="#finetuning" class="sidebar-link"><span class="ch-num">10</span>Fine-Tuning & LoRA</a>
+      <a href="#alignment" class="sidebar-link"><span class="ch-num">11</span>RLHF, DPO & Alignment</a>
+      <a href="#agents" class="sidebar-link"><span class="ch-num">12</span>AI Agents & ReAct</a>
+      <a href="#local" class="sidebar-link"><span class="ch-num">13</span>Local Models & Quantization</a>
+      <a href="#evaluation" class="sidebar-link"><span class="ch-num">14</span>Evaluation & LLMOps</a>
+
+      <span class="sidebar-phase">🏆 Mastery</span>
+      <a href="#interview" class="sidebar-link"><span class="ch-num">🎤</span>Interview Prep (30 Q)</a>
+      <a href="#glossary" class="sidebar-link"><span class="ch-num">📚</span>Full Glossary</a>
+    </nav>
+
+    <!-- ── Main ───────────────────────────── -->
+    <main class="main-content">
+
+      <!-- ════ HERO ════ -->
+      <section class="hero" id="hero">
+        <div class="hero-inner">
+          <div class="hero-badge">🧠 Complete AI Engineer Learning Path</div>
+          <h1>LLM Foundations</h1>
+          <p class="hero-sub">From "what is a token?" to building AI agents in production. Every concept, every diagram,
+            real Python code — everything you need to master Generative AI and ace interviews.</p>
+          <div class="hero-tags">
+            <span class="hero-tag">🔤 Tokenization</span>
+            <span class="hero-tag">🧮 Embeddings</span>
+            <span class="hero-tag">🎯 Attention</span>
+            <span class="hero-tag">🏗️ Transformers</span>
+            <span class="hero-tag">✍️ Prompt Engineering</span>
+            <span class="hero-tag">🎛️ Sampling</span>
+            <span class="hero-tag">🔧 Tool Calling</span>
+            <span class="hero-tag">🔬 Fine-Tuning</span>
+            <span class="hero-tag">🤖 AI Agents</span>
+            <span class="hero-tag">📦 Local Models</span>
+            <span class="hero-tag">🎤 Interview Prep</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ CHAPTER 01: TOKENIZATION ════ -->
+      <section class="section" id="tokenization">
+        <div class="container">
+          <div class="section-header reveal">
+            <div class="section-chapter">Chapter 01</div>
+            <h2 class="section-title">Tokenization & Text Processing</h2>
+            <p class="section-desc">Before an LLM can understand your sentence, it must convert it into numbers.
+              Tokenization is the very first and most fundamental step in all of AI.</p>
+          </div>
+
+          <div class="phase-banner reveal">
+            <div class="phase-dot" style="color:#10b981;background:#10b981"></div>
+            <div>
+              <h3>Phase 1 — Foundations</h3>
+              <p>We start from absolute zero. What is a token? How does text become numbers? Why does this matter for
+                costs and capabilities?</p>
+            </div>
+          </div>
+
+          <!-- What is Tokenization -->
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">🔤</div>
+            <h3>What Is Tokenization?</h3>
+            <p>Tokenization converts raw text into a sequence of <strong>tokens</strong>, then maps them to numeric IDs.
+              LLMs don't read letters — they read numbers. Tokenization is the bridge between human language and machine
+              math.</p>
+            <div class="diagram">"Hello, how are you?"
+              ↓ Tokenizer
+              ["Hello", ",", " how", " are", " you", "?"]
+              ↓ Token IDs (GPT-4 vocabulary)
+              [15339, 11, 1268, 527, 499, 30]
+              ↓ Embedding Lookup
+              [[0.12, -0.34, 0.78, ...], [0.05, 0.22, ...], ...] ← 4096-dim vectors</div>
+            <p style="margin-top:12px"><strong>Key Insight:</strong> A "token" is NOT always a word. "unhappiness" →
+              <code>["un", "happi", "ness"]</code> (3 tokens). "the" → 1 token. Spaces, punctuation — each can be a
+              token. <strong>Rule of thumb: 1 token ≈ ¾ of an English word, 4 characters.</strong></p>
+            <div class="callout interview">
+              <div class="callout-title">🎤 Interview Question</div>
+              <p><strong>"Why do LLMs use tokens instead of words or characters?"</strong></p>
+              <p><strong>Answer:</strong> Word-level creates millions of vocab entries, can't handle new words.
+                Character-level has tiny vocab but loses semantic meaning and creates extremely long sequences.
+                <strong>Subword tokenization</strong> (tokens) is the sweet spot — vocabulary of ~30K-100K, handles any
+                word by breaking it into known subwords, balances sequence length and semantic meaning.</p>
+            </div>
+          </div>
+
+          <!-- BPE Algorithm -->
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(168,85,247,.1);color:var(--purple)">📐</div>
+            <h3>Byte Pair Encoding (BPE) — How Tokenizers Are Built</h3>
+            <p>BPE is used by <strong>GPT-4, LLaMA, Claude, Gemini</strong>. Originally a data compression algorithm
+              adapted for NLP.</p>
+            <div class="timeline">
+              <div class="timeline-item">
+                <div class="tl-badge">STEP 1</div>
+                <div class="tl-body">
+                  <h4>Start with characters</h4>
+                  <p>Vocabulary begins with every individual character: a, b, c, …, z, space, punctuation. ~256 entries.
+                  </p>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="tl-badge">STEP 2</div>
+                <div class="tl-body">
+                  <h4>Count most frequent pair</h4>
+                  <p>Count all adjacent pairs in training text. Maybe <code>"t"+"h"</code> appears 500,000 times — most
+                    common pair!</p>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="tl-badge">STEP 3</div>
+                <div class="tl-body">
+                  <h4>Merge pair → new token</h4>
+                  <p>Add <code>"th"</code> to vocabulary. Replace all occurrences of <code>"t" "h"</code> with single
+                    token <code>"th"</code>.</p>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="tl-badge">STEP 4</div>
+                <div class="tl-body">
+                  <h4>Repeat until target vocab size</h4>
+                  <p>Next merge: <code>"th"+"e"</code>→<code>"the"</code>, then <code>"in"</code>, then
+                    <code>"ing"</code>… Stop at 50,000 tokens (GPT-4 uses 100,277).</p>
+                </div>
+              </div>
+            </div>
+            <div class="code-block">
+              <span class="code-label">Python</span>
+              <code><span class="kw">import</span> tiktoken  <span class="cm"># pip install tiktoken</span>
+
+<span class="cm"># Load GPT-4's tokenizer (cl100k_base)</span>
+enc = tiktoken.<span class="fn">encoding_for_model</span>(<span class="st">"gpt-4"</span>)
+
+text = <span class="st">"Machine learning is transforming healthcare"</span>
+tokens = enc.<span class="fn">encode</span>(text)
+
+<span class="bi">print</span>(<span class="st">f"Token IDs: {tokens}"</span>)
+<span class="bi">print</span>(<span class="st">f"Count: {len(tokens)} tokens"</span>)
+<span class="bi">print</span>(<span class="st">f"Decoded pieces: {[enc.decode([t]) for t in tokens]}"</span>)
+
+<span class="cm"># Output:
+# Token IDs: [13102, 6975, 374, 54952, 18985]
+# Count: 5 tokens
+# Decoded pieces: ['Machine', ' learning', ' is', ' transform', 'ing', ' healthcare']</span>
+
+<span class="cm"># Token cost estimation</span>
+texts = [<span class="st">"Hello"</span>, <span class="st">"Hello world"</span>, <span class="st">"Artificial Intelligence"</span>, <span class="st">"🎉🚀"</span>]
+<span class="kw">for</span> t <span class="kw">in</span> texts:
+    n = <span class="bi">len</span>(enc.<span class="fn">encode</span>(t))
+    cost = n * <span class="nm">0.000005</span>  <span class="cm"># GPT-4o: $5/1M input tokens</span>
+    <span class="bi">print</span>(<span class="st">f"'{t}' = {n} tokens = ${cost:.8f}"</span>)
+<span class="cm"># Emojis cost more tokens! 🎉 = 3 tokens</span></code>
+            </div>
+            <div class="callout tip">
+              <div class="callout-title">💰 Tokens = Money</div>
+              <p><strong>GPT-4o</strong>: $5 per 1M input tokens. <strong>GPT-4o-mini</strong>: $0.15 per 1M tokens.
+                Always estimate token counts before designing your system. A typical chat message is 50-150 tokens. A
+                300-page book is ~150,000 tokens — that fits in GPT-4o's context window!</p>
+            </div>
+          </div>
+
+          <!-- Tokenizer Comparison -->
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(34,211,238,.1);color:var(--cyan)">⚖️</div>
+            <h3>Tokenizer Algorithms Compared</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    <th>Used By</th>
+                    <th>How Different</th>
+                    <th>Vocab Size</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>BPE</strong></td>
+                    <td>GPT-4, LLaMA 3, Claude</td>
+                    <td>Merges by character pair frequency</td>
+                    <td>50K–100K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>WordPiece</strong></td>
+                    <td>BERT, DistilBERT</td>
+                    <td>Merges to maximize LM likelihood. Uses ## prefix for subwords</td>
+                    <td>30K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>SentencePiece</strong></td>
+                    <td>T5, Gemma, mBART</td>
+                    <td>Treats spaces as characters, language-agnostic</td>
+                    <td>32K–256K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Unigram LM</strong></td>
+                    <td>XLNet, AlBERT</td>
+                    <td>Probabilistic approach, trains multiple possible tokenizations</td>
+                    <td>Variable</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ CHAPTER 02: EMBEDDINGS ════ -->
+      <section class="section" id="embeddings">
+        <div class="container">
+          <div class="section-header reveal">
+            <div class="section-chapter">Chapter 02</div>
+            <h2 class="section-title">Embeddings & Vector Representations</h2>
+            <p class="section-desc">Embeddings are the mathematical "understanding" of language. They convert meaning
+              into geometry — similar meanings become nearby points in space.</p>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(168,85,247,.1);color:var(--purple)">🧮</div>
+            <h3>What Are Embeddings?</h3>
+            <p>An embedding is a <strong>dense vector</strong> (a list of decimal numbers) representing the
+              <strong>semantic meaning</strong> of text. Texts with similar meanings have vectors that are
+              <strong>geometrically close</strong> in high-dimensional space.</p>
+            <div class="diagram">Word/Sentence Embedding (simplified to 4D)
+              ─────────────────────────────────────────────────────────
+              "king" → [ 0.80, 0.60, -0.10, 0.90]
+              "queen" → [ 0.75, 0.62, -0.18, 0.87] ← CLOSE to king
+              "apple" → [-0.30, 0.10, 0.90, 0.20] ← FAR from king
+              "banana" → [-0.22, 0.15, 0.85, 0.28] ← CLOSE to apple
+
+              Famous discovery (Word2Vec, 2013):
+              king - man + woman ≈ queen (vector arithmetic works on MEANING!)
+              Paris - France + Italy ≈ Rome</div>
+            <div class="grid-2" style="margin-top:20px">
+              <div class="mini-card">
+                <h4>Sparse vs Dense</h4>
+                <p><strong>Sparse (One-Hot):</strong> [0,0,0,1,0,...,0] — mostly zeros, no semantic
+                  info.<br><strong>Dense (Embedding):</strong> [0.12,-0.34,0.56,...] — every dimension carries meaning.
+                  Modern LLMs always use dense.</p>
+              </div>
+              <div class="mini-card">
+                <h4>Dimensionality</h4>
+                <p><code>384d</code> — all-MiniLM (free, fast)<br><code>768d</code> — BERT-base<br><code>1536d</code> —
+                  OpenAI ada-002<br><code>3072d</code> — OpenAI large<br>More dims = more nuance but slower search</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(34,211,238,.1);color:var(--cyan)">📐</div>
+            <h3>Cosine Similarity — How We Measure Meaning Distance</h3>
+            <div class="diagram">Cosine Similarity = (A · B) / (‖A‖ × ‖B‖)
+
+              Range: -1 ──────────── 0 ────────────→ +1
+              Opposite meaning Unrelated Identical meaning
+
+              Practical Examples:
+              "How do cars work?" vs "Mechanics of automobiles" → 0.89 ✅ Very similar
+              "How do cars work?" vs "I love Italian pizza" → 0.08 ❌ Unrelated
+              "happy" vs "joyful" → 0.92 ✅ Synonyms
+              "hot" vs "cold" → 0.41 ⚠️ Related but opposite</div>
+            <div class="code-block">
+              <span class="code-label">Python</span>
+              <code><span class="kw">from</span> sentence_transformers <span class="kw">import</span> SentenceTransformer
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+model = <span class="fn">SentenceTransformer</span>(<span class="st">'all-MiniLM-L6-v2'</span>)  <span class="cm"># FREE, downloads automatically</span>
+
+sentences = [
+    <span class="st">"How do cars work?"</span>,
+    <span class="st">"Explain the mechanics of automobiles"</span>,
+    <span class="st">"I love Italian food"</span>,
+]
+embeddings = model.<span class="fn">encode</span>(sentences, normalize_embeddings=<span class="kw">True</span>)
+<span class="bi">print</span>(<span class="st">f"Embedding shape: {embeddings.shape}"</span>)  <span class="cm"># (3, 384)</span>
+
+<span class="kw">def</span> <span class="fn">cos_sim</span>(a, b):
+    <span class="kw">return</span> np.<span class="fn">dot</span>(a, b) / (np.linalg.<span class="fn">norm</span>(a) * np.linalg.<span class="fn">norm</span>(b))
+
+<span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="bi">len</span>(sentences)):
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(i+<span class="nm">1</span>, <span class="bi">len</span>(sentences)):
+        sim = <span class="fn">cos_sim</span>(embeddings[i], embeddings[j])
+        <span class="bi">print</span>(<span class="st">f"{sentences[i][:20]}... vs {sentences[j][:20]}... → {sim:.4f}"</span>)
+<span class="cm"># How do cars work?... vs Explain the mechani... → 0.7812
+# How do cars work?... vs I love Italian food... → 0.0341</span></code>
+            </div>
+            <div class="callout interview">
+              <div class="callout-title">🎤 Interview Question</div>
+              <p><strong>"Cosine similarity vs Euclidean distance — when to use which for text?"</strong></p>
+              <p><strong>Answer:</strong> Cosine similarity measures <em>direction</em> (angle between vectors) — it's
+                scale-invariant. A short 50-word doc and a 5000-word doc about the same topic will have HIGH cosine
+                similarity because their meaning direction is similar. Euclidean distance measures raw distance —
+                affected by vector magnitude, so the long doc would appear different. For semantic text search =
+                <strong>always cosine</strong>. Only use Euclidean when vector magnitudes carry meaning (e.g., word
+                frequency counts).</p>
+            </div>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(16,185,129,.1);color:var(--green)">🏢</div>
+            <h3>Embedding Models Comparison</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Model</th>
+                    <th>Dims</th>
+                    <th>Cost</th>
+                    <th>Best For</th>
+                    <th>Speed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>all-MiniLM-L6-v2</strong></td>
+                    <td>384</td>
+                    <td>FREE</td>
+                    <td>Learning, prototyping, RAG demo</td>
+                    <td>⚡ Very Fast</td>
+                  </tr>
+                  <tr>
+                    <td><strong>BGE-large-en-v1.5</strong></td>
+                    <td>1024</td>
+                    <td>FREE</td>
+                    <td>Production-grade, MTEB leader</td>
+                    <td>🏃 Fast</td>
+                  </tr>
+                  <tr>
+                    <td><strong>text-embedding-3-small</strong></td>
+                    <td>1536</td>
+                    <td>$0.02/1M</td>
+                    <td>Best quality-cost ratio (OpenAI)</td>
+                    <td>⚡ API Fast</td>
+                  </tr>
+                  <tr>
+                    <td><strong>text-embedding-3-large</strong></td>
+                    <td>3072</td>
+                    <td>$0.13/1M</td>
+                    <td>Highest quality precision tasks</td>
+                    <td>🐢 Slower</td>
+                  </tr>
+                  <tr>
+                    <td><strong>voyage-3</strong></td>
+                    <td>1024</td>
+                    <td>$0.06/1M</td>
+                    <td>Code & long-document retrieval</td>
+                    <td>🏃 Fast</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="callout warning">
+              <div class="callout-title">⚠️ Critical Rule</div>
+              <p>The embedding model used during <strong>ingestion</strong> MUST be the <strong>same model</strong> used
+                during <strong>query time</strong>. You cannot mix models — each model's vector space is unique.
+                Switching models requires re-embedding your entire dataset.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ CHAPTER 03: ATTENTION ════ -->
+      <section class="section" id="attention">
+        <div class="container">
+          <div class="section-header reveal">
+            <div class="section-chapter">Chapter 03</div>
+            <h2 class="section-title">Attention Mechanism</h2>
+            <p class="section-desc">The breakthrough that made modern AI possible. Attention solves the fundamental
+              problem of "which words matter most when understanding a sentence."</p>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(245,158,11,.1);color:var(--orange)">🎯</div>
+            <h3>The Problem Attention Solves</h3>
+            <p>Before Transformers (2017), we used <strong>RNNs</strong> (Recurrent Neural Networks) which processed
+              text word-by-word sequentially. The result: long-distance relationships were forgotten.</p>
+            <div class="diagram">RNN Problem (Sequential, left-to-right):
+              "The cat that the dog chased ran away"
+
+              Processing order: The→cat→that→the→dog→chased→ran→away
+              ↑
+              By "away", model ~forgot what "The cat" was!
+              "The cat" is 8 steps from "ran" — information lost.
+
+              ─────────────────────────────────────────────────────────────
+              Attention Solution (Parallel, every-word-to-every-word):
+
+              "ran" can directly look at "cat" (skip 6 words!) ✅
+              "chased" can directly look at "dog" ✅
+              "bank" can look at "river" to know it's a riverbank, not a financial bank ✅
+
+              No distance limit. No information loss. All at once.</div>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(236,72,153,.1);color:var(--pink)">🔑</div>
+            <h3>Query, Key, Value (QKV) — The Core Mechanism</h3>
+            <p>Think of attention as a <strong>smart search engine inside the model</strong>:</p>
+            <div class="grid-3" style="margin:16px 0">
+              <div class="mini-card">
+                <h4>🔍 Query (Q)</h4>
+                <p>"What am I looking for?" The current word creates a search query. Like typing "weather Tokyo" into
+                  Google.</p>
+              </div>
+              <div class="mini-card">
+                <h4>🗝️ Key (K)</h4>
+                <p>"What do I represent?" Every word advertises itself with a key. Like article titles in a catalog that
+                  Google searches through.</p>
+              </div>
+              <div class="mini-card">
+                <h4>📦 Value (V)</h4>
+                <p>"Here's my actual content." Once matched via Q×K, the value is retrieved. Like the article's actual
+                  text content.</p>
+              </div>
+            </div>
+            <div class="diagram">Self-Attention Computation Step by Step:
+
+              Input: "The cat sat" → Token embeddings: [e_The, e_cat, e_sat]
+
+              Step 1: Create Q, K, V matrices via learned linear projections
+              Q = embedding × W_Q (What is each word looking for?)
+              K = embedding × W_K (What does each word contain?)
+              V = embedding × W_V (What will each word contribute?)
+
+              Step 2: Attention scores = Q × K^T
+              Score("cat", "The") = 0.2 (low attention)
+              Score("cat", "cat") = 0.9 (high — attends to itself)
+              Score("cat", "sat") = 0.6 (medium — cat is what sat)
+
+              Step 3: Scale scores: divide by √d_k (prevents vanishing gradients)
+
+              Step 4: Softmax → probabilities summing to 1.0
+              Weights: [0.15, 0.55, 0.30]
+
+              Step 5: Weighted sum of Values
+              Output_cat = 0.15×V_The + 0.55×V_cat + 0.30×V_sat
+              = Context-aware representation of "cat"</div>
+            <div class="callout interview">
+              <div class="callout-title">🎤 Interview Question</div>
+              <p><strong>"Explain self-attention in one paragraph."</strong></p>
+              <p><strong>Answer:</strong> Self-attention allows every token to compute a weighted relationship with
+                every other token. Each token generates three vectors: Query (searching for relevant context), Key
+                (advertising its content), and Value (its information). Attention scores come from the dot product of
+                each Query with all Keys, scaled by √d_k and normalized by softmax. The output for each token is a
+                weighted sum of all Values — heavy weights on contextually relevant tokens. This enables direct
+                long-range dependencies regardless of distance. O(n²) complexity means it's costly for very long
+                sequences.</p>
+            </div>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">👁️</div>
+            <h3>Multi-Head Attention — Multiple Perspectives</h3>
+            <p>Instead of computing attention once, the model runs it <strong>H times in parallel</strong>, each with
+              different learned projection matrices. Each "head" learns a different type of relationship:</p>
+            <div class="grid-2" style="margin:16px 0">
+              <div class="mini-card">
+                <h4>Head 1 → Syntax</h4>
+                <p>Learns subject-verb relationships. "The cat <em>sat</em>" — connects subject to verb.</p>
+              </div>
+              <div class="mini-card">
+                <h4>Head 2 → Semantics</h4>
+                <p>Learns semantic relationships. "<em>bank</em>" near "<em>river</em>" → financial bank or riverbank?
+                </p>
+              </div>
+              <div class="mini-card">
+                <h4>Head 3 → Coreference</h4>
+                <p>Learns pronoun resolution. "John went home. <em>He</em> was tired." — connects "He" to "John".</p>
+              </div>
+              <div class="mini-card">
+                <h4>Head 4 → Position</h4>
+                <p>Learns local adjacency patterns. Words near each other often should be attended to together.</p>
+              </div>
+            </div>
+            <p><strong>Outputs of all H heads are concatenated and projected back</strong> to original dimension. GPT-3
+              uses 96 attention heads per layer. That's 96 simultaneous "lenses" analyzing your text.</p>
+            <div class="callout key">
+              <div class="callout-title">🔑 Cross-Attention vs Self-Attention</div>
+              <p><strong>Self-Attention:</strong> A sequence attends to itself (used in decoder-only LLMs like GPT,
+                Claude, LLaMA). <strong>Cross-Attention:</strong> Decoder attends to encoder output (used in
+                encoder-decoder models like T5, for translation). Most modern generation LLMs are decoder-only and use
+                only self-attention.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ CHAPTER 04: TRANSFORMERS ════ -->
+      <section class="section" id="transformers">
+        <div class="container">
+          <div class="section-header reveal">
+            <div class="section-chapter">Chapter 04</div>
+            <h2 class="section-title">Transformer Architecture</h2>
+            <p class="section-desc">"Attention Is All You Need" (2017) — the paper that changed everything. Every modern
+              LLM: GPT-4, Claude, LLaMA, Gemini is built on this architecture.</p>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(168,85,247,.1);color:var(--purple)">🏗️</div>
+            <h3>The Decoder-Only Transformer (How GPT Works)</h3>
+            <div class="diagram"> INPUT TEXT: "What is AI?"
+              │
+              ┌──────────▼──────────┐
+              │ TOKENIZER │ "What is AI?" → [2061, 374, 15592, 30]
+              └──────────┬──────────┘
+              │ token IDs
+              ┌──────────▼──────────┐
+              │ TOKEN EMBEDDINGS │ Each ID → 4096-dim vector
+              │ + POSITIONAL ENC │ + position info (RoPE or sinusoidal)
+              └──────────┬──────────┘
+              │
+              ┌══════════▼══════════════════════════════╗
+              ║ TRANSFORMER BLOCK ×N (repeated) ║
+              ║ ║
+              ║ ┌─────────────────────────────────┐ ║
+              ║ │ Layer Norm (Pre-Norm) │ ║
+              ║ └──────────────┬──────────────────┘ ║
+              ║ │ ║
+              ║ ┌──────────────▼──────────────────┐ ║
+              ║ │ Multi-Head Causal Self-Attention│ ║ ← Masked: can't see future tokens
+              ║ │ (H=32 heads, d_k=128 each) │ ║
+              ║ └──────────────┬──────────────────┘ ║
+              ║ │ + Residual connection ║
+              ║ ┌──────────────▼──────────────────┐ ║
+              ║ │ Layer Norm (Pre-Norm) │ ║
+              ║ └──────────────┬──────────────────┘ ║
+              ║ │ ║
+              ║ ┌──────────────▼──────────────────┐ ║
+              ║ │ Feed-Forward Network (FFN) │ ║
+              ║ │ Linear(4096→16384) + GeLU │ ║
+              ║ │ + Linear(16384→4096) │ ║
+              ║ └──────────────┬──────────────────┘ ║
+              ║ │ + Residual connection ║
+              ╚══════════════════╪═════════════════════*/
+              │
+              ┌──────────▼──────────┐
+              │ FINAL LAYER NORM │
+              └──────────┬──────────┘
+              ┌──────────▼──────────┐
+              │ LINEAR (UNEMBEDDING)│ 4096 → 100,277 vocab logits
+              └──────────┬──────────┘
+              ┌──────────▼──────────┐
+              │ SOFTMAX │ logits → probabilities over vocabulary
+              └──────────┬──────────┘
+              ┌──────────▼──────────┐
+              │ SAMPLE NEXT TOKEN │ temperature/top-p → pick token "Artificial"
+              └──────────┬──────────┘
+              │ Append token, repeat from top!
+              ▼
+              "Artificial Intelligence is..."</div>
+            <p style="margin-top:12px;color:var(--text-2)"><strong>This repeats for every single token
+                generated.</strong> A 200-word response ≈ 270 tokens = 270 forward passes through all N layers. That's
+              why inference is computationally expensive and why GPUs are needed for fast generation.</p>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(34,211,238,.1);color:var(--cyan)">📋</div>
+            <h3>Every Component and Why It Exists</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>What It Does</th>
+                    <th>Why It's Needed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Token Embeddings</strong></td>
+                    <td>Maps token ID → 4096-dim vector</td>
+                    <td>Converts discrete tokens into continuous space where math works</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Positional Encoding</strong></td>
+                    <td>Adds position info (RoPE / sinusoidal)</td>
+                    <td>Without it, "dog bites man" = "man bites dog" to the model</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Causal Masking</strong></td>
+                    <td>Prevents attending to future tokens</td>
+                    <td>Enables auto-regressive generation — can't "cheat" by seeing ahead</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Multi-Head Attention</strong></td>
+                    <td>H parallel attention computations</td>
+                    <td>Learns different semantic and syntactic relationships simultaneously</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Residual Connections</strong></td>
+                    <td>Output = f(x) + x (skip connection)</td>
+                    <td>Prevents vanishing gradient problem in deep networks (32+ layers)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Layer Normalization</strong></td>
+                    <td>Normalizes values per token</td>
+                    <td>Stabilizes training, prevents exploding/vanishing activations</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Feed-Forward (FFN)</strong></td>
+                    <td>2 linear + non-linearity per layer</td>
+                    <td>"Stores" factual knowledge; most model parameters are in FFN</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Linear + Softmax</strong></td>
+                    <td>Projects to vocabulary probabilities</td>
+                    <td>Translates internal representations to "which word comes next"</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(16,185,129,.1);color:var(--green)">🔀</div>
+            <h3>Transformer Variants — Encoder, Decoder, Both</h3>
+            <div class="grid-3">
+              <div class="mini-card">
+                <h4>🔵 Encoder-Only</h4>
+                <p><strong>Models:</strong> BERT, RoBERTa, DistilBERT<br><strong>Task:</strong> Understanding
+                  (classification, NER, sentiment, embeddings)<br><strong>How:</strong> Bidirectional attention — each
+                  token sees all others. NOT used for generation.</p>
+              </div>
+              <div class="mini-card" style="border-color:rgba(99,102,241,.4)">
+                <h4>🟣 Decoder-Only ⭐</h4>
+                <p><strong>Models:</strong> GPT-4, Claude, LLaMA 3, Gemini<br><strong>Task:</strong> Text generation
+                  (chat, code, creative writing)<br><strong>How:</strong> Causal attention — each token only sees
+                  previous tokens. Industry standard today.</p>
+              </div>
+              <div class="mini-card">
+                <h4>🟢 Encoder-Decoder</h4>
+                <p><strong>Models:</strong> T5, BART, mBART, mT5<br><strong>Task:</strong> Translation, summarization
+                  (seq2seq)<br><strong>How:</strong> Encoder reads all input, decoder generates output attending to
+                  encoder states.</p>
+              </div>
+            </div>
+            <div class="callout interview">
+              <div class="callout-title">🎤 Interview Question</div>
+              <p><strong>"Why are modern LLMs decoder-only?"</strong></p>
+              <p><strong>Answer:</strong> Decoder-only models scale extremely well (empirically proven by
+                OpenAI/Anthropic/Meta research). They naturally support in-context learning (few-shot prompting) because
+                the model processes examples before generating — the causal attention mask means examples influence
+                generation. The architecture is simpler (no cross-attention between encoder and decoder), and the causal
+                masking is what enables auto-regressive token-by-token generation. Encoder-only models require separate
+                generation mechanisms. Research also shows that very large decoder-only models can match encoder-decoder
+                performance on most tasks.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ CHAPTER 05: LLM TYPES ════ -->
+      <section class="section" id="llm-types">
+        <div class="container">
+          <div class="section-header reveal">
+            <div class="section-chapter">Chapter 05</div>
+            <h2 class="section-title">LLM Types, Scale & Key Models</h2>
+            <p class="section-desc">The landscape of LLMs in 2024-2025 — what exists, how they differ, and how to choose
+              the right one for your task.</p>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(245,158,11,.1);color:var(--orange)">📊</div>
+            <h3>How LLM Scale Works</h3>
+            <div class="stat-row">
+              <div class="stat-card"><span class="stat-num">1B</span>
+                <div class="stat-label">Small Model (Phi-3-mini)</div>
+              </div>
+              <div class="stat-card"><span class="stat-num">7B</span>
+                <div class="stat-label">Medium (Mistral-7B)</div>
+              </div>
+              <div class="stat-card"><span class="stat-num">70B</span>
+                <div class="stat-label">Large (LLaMA 3.3)</div>
+              </div>
+              <div class="stat-card"><span class="stat-num">405B</span>
+                <div class="stat-label">Very Large (LLaMA 3.1)</div>
+              </div>
+              <div class="stat-card"><span class="stat-num">~1.8T</span>
+                <div class="stat-label">GPT-4 (estimated MoE)</div>
+              </div>
+            </div>
+            <p style="color:var(--text-2)"><strong>Scaling laws</strong> (Chinchilla, 2022): Training a model with twice
+              the parameters on twice the data gives roughly constant improvement. There's a compute-optimal ratio of
+              ~20 tokens per parameter.</p>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(99,102,241,.1);color:var(--blue)">🗺️</div>
+            <h3>Model Landscape 2024-2025</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Model</th>
+                    <th>Creator</th>
+                    <th>Context</th>
+                    <th>Best For</th>
+                    <th>Open?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>GPT-4o</strong></td>
+                    <td>OpenAI</td>
+                    <td>128K</td>
+                    <td>General, vision, code, reasoning</td>
+                    <td>❌ API only</td>
+                  </tr>
+                  <tr>
+                    <td><strong>GPT-4o-mini</strong></td>
+                    <td>OpenAI</td>
+                    <td>128K</td>
+                    <td>Cost-efficient general tasks</td>
+                    <td>❌ API only</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Claude 3.5 Sonnet</strong></td>
+                    <td>Anthropic</td>
+                    <td>200K</td>
+                    <td>Long docs, coding, analysis</td>
+                    <td>❌ API only</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Gemini 1.5 Pro</strong></td>
+                    <td>Google</td>
+                    <td>2M (!)</td>
+                    <td>Extremely long documents</td>
+                    <td>❌ API only</td>
+                  </tr>
+                  <tr>
+                    <td><strong>LLaMA 3.3 70B</strong></td>
+                    <td>Meta</td>
+                    <td>128K</td>
+                    <td>Open-source, near-GPT-4 quality</td>
+                    <td>✅ Free</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Mistral 7B</strong></td>
+                    <td>Mistral</td>
+                    <td>32K</td>
+                    <td>Small, fast, efficient</td>
+                    <td>✅ Free</td>
+                  </tr>
+                  <tr>
+                    <td><strong>DeepSeek-V3</strong></td>
+                    <td>DeepSeek</td>
+                    <td>128K</td>
+                    <td>Coding, reasoning, cheap training</td>
+                    <td>✅ Free</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Phi-3-mini</strong></td>
+                    <td>Microsoft</td>
+                    <td>128K</td>
+                    <td>Edge devices, tiny size</td>
+                    <td>✅ Free</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Mixtral 8x7B</strong></td>
+                    <td>Mistral</td>
+                    <td>32K</td>
+                    <td>MoE — expert routing, efficient</td>
+                    <td>✅ Free</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Gemma 2 9B</strong></td>
+                    <td>Google</td>
+                    <td>8K</td>
+                    <td>Google ecosystem integration</td>
+                    <td>✅ Free</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card reveal">
+            <div class="card-icon" style="background:rgba(236,72,153,.1);color:var(--pink)">⚡</div>
+            <h3>Mixture of Experts (MoE) — How GPT-4 Scales</h3>
+            <p>Traditional (Dense) models: every parameter activates for every input. <strong>MoE</strong>: only a
+              subset of "expert" networks activate per token — getting the benefit of a massive model at the cost of a
+              smaller one.</p>
+            <div class="diagram">Standard Dense Model (7B active params for every token):
+              Input → [ALL 7B parameters process every single token] → Output
+
+              Mixture of Experts Model (e.g., Mixtral 8×7B):
+              Input → Router Network → decides which experts to activate
+              ↓
+              ┌────┬────┬────┬────┬────┬────┬────┬────┐
+              │E1 │E2 │E3 │E4 │E5 │E6 │E7 │E8 │ ← 8 experts
+              └──┬─┴──┬─┴────┴────┴────┴────┴────┴────┘
+              ▲ ▲
+              Active Active (only 2 of 8 selected per token)
+              Expert Expert
+
+              Total params: 8×7B = 56B
+              Active params per token: 2×7B = 14B ← 75% less compute!
+              Speed: Similar to 14B dense model
+              Quality: Similar to 56B dense model 🎉</div>
+            <div class="callout interview">
+              <div class="callout-title">🎤 Interview Question</div>
+              <p><strong>"What is MoE and why is it important?"</strong></p>
+              <p><strong>Answer:</strong> Mixture of Experts is an architecture where a "router" network selects K of N
+                expert sub-networks per token, instead of using all parameters. This allows dramatically larger total
+                parameter counts with much less compute per inference. GPT-4 is believed to use MoE with ~1.8T total
+                params but only activating ~200B per token. Mixtral 8×7B activates 14B of 56B params. Benefits: higher
+                capacity (specialization), faster inference, lower memory bandwidth per token. Challenge: load balancing
+                — ensuring all experts get used, not just 1-2 popular ones.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dynamic content loads here -->
+      <div id="dynamic-content"></div>
+
+      <div class="page-footer">
+        <p>🧠 LLM Foundations — Complete GenAI Learning Platform</p>
+        <p style="margin-top:8px"><a href="../RAG_Zero_To_Hero/index.html">→ Continue to RAG: Zero to Hero</a></p>
+      </div>
+
+    </main>
+  </div><!-- end layout -->
+
+  <script src="app.js"></script>
+</body>
+
+</html>
