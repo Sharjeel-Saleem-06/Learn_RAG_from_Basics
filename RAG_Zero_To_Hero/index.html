@@ -4,283 +4,544 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG: Zero to Hero — The Ultimate Guide</title>
+    <title>RAG: Zero to Hero — Complete Learning Platform</title>
     <meta name="description"
-        content="Master Retrieval-Augmented Generation (RAG) from scratch. Learn data ingestion, vector databases, chunking, retrieval techniques, and advanced patterns.">
+        content="Master Retrieval-Augmented Generation from absolute zero to advanced production-grade systems. Covers embeddings, vector databases, chunking, retrieval, agentic RAG, evaluation, and more.">
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-    <!-- ========== HERO ========== -->
-    <section class="hero">
-        <div class="hero-content">
-            <span class="badge badge-emerald">Mastery Path</span>
-            <h1>RAG: Zero to Hero</h1>
-            <p class="subtitle">From naive implementations to production-grade architectures. Learn how to give Large
-                Language Models a flawless memory to answer questions using your private data.</p>
-            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
-                <span class="badge badge-teal">📥 Ingestion</span>
-                <span class="badge badge-purple">✂️ Chunking</span>
-                <span class="badge badge-blue">🔢 Embeddings</span>
-                <span class="badge badge-emerald">🗄️ Vector DBs</span>
-                <span class="badge badge-orange">🔍 Retrieval</span>
-                <span class="badge badge-teal">✍️ Generation</span>
-            </div>
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     SIDEBAR NAVIGATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <span class="logo-text">RAG: Zero to Hero</span>
+            <span class="logo-sub">Complete Mastery Guide</span>
         </div>
-    </section>
 
-    <!-- ========== NAVIGATION ========== -->
-    <nav class="nav-bar" id="navbar">
-        <div class="nav-inner">
-            <a href="#whatisrag" class="nav-link">🤔 What is RAG?</a>
-            <a href="#architecture" class="nav-link">🏗️ The Architecture</a>
-            <a href="#ingestion" class="nav-link">📥 Ingestion & Chunking</a>
-            <a href="#vectordb" class="nav-link">🗄️ Vector Databases</a>
-            <a href="#retrieval" class="nav-link">🔍 Retrieval Strategies</a>
-            <a href="#reranking" class="nav-link">⭐ Re-ranking</a>
-            <a href="#advanced" class="nav-link">🚀 Advanced RAG</a>
-            <a href="#evaluation" class="nav-link">📏 Evaluation</a>
-        </div>
-    </nav>
+        <span class="sidebar-phase">🟢 Phase 1 · Beginner</span>
+        <a href="#intro" class="sidebar-link active"><span class="ch-num">00</span>Introduction & WHY</a>
+        <a href="#howrag" class="sidebar-link"><span class="ch-num">01</span>What Is RAG?</a>
+        <a href="#tokenembed" class="sidebar-link"><span class="ch-num">02</span>Tokens & Embeddings</a>
+        <a href="#chunking" class="sidebar-link"><span class="ch-num">03</span>Chunking Strategies</a>
+        <a href="#vectordb" class="sidebar-link"><span class="ch-num">04</span>Vector Databases</a>
+        <a href="#naivepipeline" class="sidebar-link"><span class="ch-num">05</span>Naive RAG Pipeline</a>
 
-    <!-- ===================================================================
-     SECTION 1: WHAT IS RAG
-     =================================================================== -->
-    <section class="section" id="whatisrag">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-number">Chapter 01</div>
-                <h2 class="section-title">What is RAG?</h2>
-                <p class="section-desc">LLMs are brilliant, but they have a fatal flaw: they only know what they were
-                    trained on, and they make things up when they don't know.</p>
-            </div>
+        <span class="sidebar-phase">🔵 Phase 2 · Intermediate</span>
+        <a href="#querytrans" class="sidebar-link"><span class="ch-num">06</span>Query Transformation</a>
+        <a href="#hybrid" class="sidebar-link"><span class="ch-num">07</span>Hybrid Search</a>
+        <a href="#reranking" class="sidebar-link"><span class="ch-num">08</span>Re-Ranking</a>
+        <a href="#parentchild" class="sidebar-link"><span class="ch-num">09</span>Parent-Child Retrieval</a>
+        <a href="#prompteng" class="sidebar-link"><span class="ch-num">10</span>Prompt Engineering</a>
 
-            <!-- The Problem -->
-            <div class="concept-card">
-                <div class="concept-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-orange)">⚠️</div>
-                <h3>The Core Problem with LLMs</h3>
-                <p>Imagine a brilliant professor locked in a room in 2023. They know everything up to that date, but:
-                </p>
-                <ul>
-                    <li>They <strong>cannot access the internet</strong> or your private company documents.</li>
-                    <li>They suffer from <strong>Hallucination</strong>: If you ask them a highly specific question they
-                        don't know, they will confidently invent a plausible-sounding lie.</li>
-                    <li>Training/Fine-tuning them on new data is <strong>too slow, too expensive, and doesn't fully stop
-                            hallucinations</strong>.</li>
-                </ul>
-            </div>
+        <span class="sidebar-phase">🔴 Phase 3 · Advanced</span>
+        <a href="#agenticrag" class="sidebar-link"><span class="ch-num">11</span>Agentic RAG</a>
+        <a href="#graphrag" class="sidebar-link"><span class="ch-num">12</span>GraphRAG</a>
+        <a href="#raptor" class="sidebar-link"><span class="ch-num">13</span>RAPTOR & ColBERT</a>
+        <a href="#multimodal" class="sidebar-link"><span class="ch-num">14</span>Multi-Modal RAG</a>
+        <a href="#evaluation" class="sidebar-link"><span class="ch-num">15</span>Evaluation (RAGAS)</a>
+        <a href="#production" class="sidebar-link"><span class="ch-num">16</span>Production & Deployment</a>
 
-            <!-- The Solution -->
-            <div class="concept-card">
-                <div class="concept-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald)">💡</div>
-                <h3>The Solution: Open-Book Exams</h3>
-                <p><strong>RAG (Retrieval-Augmented Generation)</strong> turns the closed-book exam into an open-book
-                    exam. Instead of asking the LLM to remember facts, we <strong>retrieve the exact facts</strong> from
-                    a database, hand them to the LLM, and say: <em>"Read this, and answer the question based ONLY on
-                        this text."</em></p>
+        <span class="sidebar-phase">🏆 Our Implementation</span>
+        <a href="#coderef" class="sidebar-link"><span class="ch-num">✔</span>Our Project Files</a>
+        <a href="#interview" class="sidebar-link"><span class="ch-num">★</span>Interview Prep</a>
+    </aside>
 
-                <div class="info-box tip">
-                    <div class="info-box-title">💡 Why not just use Fine-Tuning?</div>
-                    <p>A common beginner mistake is thinking: <em>"I'll just fine-tune an LLM on my PDFs!"</em>
-                        Fine-tuning is for teaching an LLM <strong>how to speak</strong> (style, format, domain
-                        language). It is TERRIBLE at teaching an LLM <strong>new facts</strong>. RAG is for facts.
-                        Fine-tuning is for form.</p>
-                    <p><strong>Bonus:</strong> With RAG, if a document changes, you just update the database. If you
-                        fine-tuned, you'd have to retrain the model!</p>
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     MAIN CONTENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <main class="main-content">
+
+        <!-- HERO -->
+        <section class="hero" id="intro">
+            <div class="hero-inner">
+                <div class="hero-phase">🎓 Complete Learning Platform · 16 Chapters</div>
+                <h1>RAG:<br>Zero to Hero</h1>
+                <p class="hero-subtitle">From "What is an LLM?" to building production-grade Agentic RAG systems. Every
+                    concept, every technique, with real Python code — everything you need to dominate GenAI interviews
+                    and build real products.</p>
+                <div class="hero-tags">
+                    <span class="hero-tag">📥 Ingestion</span>
+                    <span class="hero-tag">✂️ Chunking</span>
+                    <span class="hero-tag">🧠 Embeddings</span>
+                    <span class="hero-tag">🗄️ Vector DBs</span>
+                    <span class="hero-tag">🔍 Retrieval</span>
+                    <span class="hero-tag">⚖️ Re-Ranking</span>
+                    <span class="hero-tag">🤖 Agentic RAG</span>
+                    <span class="hero-tag">🕸️ GraphRAG</span>
+                    <span class="hero-tag">📏 RAGAS Eval</span>
+                    <span class="hero-tag">🚀 Production</span>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ===================================================================
-     SECTION 2: NAIVE RAG ARCHITECTURE
-     =================================================================== -->
-    <section class="section" id="architecture">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-number">Chapter 02</div>
-                <h2 class="section-title">The Naive RAG Architecture</h2>
-                <p class="section-desc">The standard RAG pipeline is divided into two distinct phases: <strong>Data
-                        Ingestion</strong> (done once) and <strong>Querying</strong> (done per user request).</p>
-            </div>
-
-            <div class="concept-card">
-                <div class="concept-icon" style="background:rgba(20,184,166,0.12);color:var(--accent-teal)">🏗️</div>
-                <h3>The Pipeline Visualized</h3>
-
-                <div class="diagram" style="text-align:center;">
-                    PHASE 1: INGESTION (Data Prep)
-                    ──────────────────────────────
-                    Private Docs ─▶ Load Text ─▶ Split into Chunks ─▶ Embed to Vectors ─▶ Vector DB
-                    (PDF, txt) (PyPDF) (500 chars) (OpenAI/Chroma) (Storage)
-
-
-                    PHASE 2: QUERYING (Runtime)
-                    ───────────────────────────
-                    User Question ─▶ Embed Question ─▶ Search Vector DB ─▶ Top 3 Chunks Retrieved
-
-                    ┌─────────────────────────────────────────────────────────┐
-                    │ PROMPT CONSTRUCTION │
-                    │ System: "Answer based ONLY on context." │
-                    │ Context: [Insert Top 3 Chunks Here] │
-                    │ Question: [Insert User Question Here] │
-                    └─────────────────────────────────────────────────────────┘
-                    │
-                    ▼
-                    LLM Generation
-                    │
-                    ▼
-                    "According to the documents..."</div>
-
-                <p style="margin-top: 20px;">Think of this exactly like exactly how we built
-                    <code>rag_pipeline.py</code> in our application. It's an orchestrator that glues these steps
-                    together.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===================================================================
-     SECTION 3: INGESTION & CHUNKING
-     =================================================================== -->
-    <section class="section" id="ingestion">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-number">Chapter 03</div>
-                <h2 class="section-title">Data Ingestion & Chunking</h2>
-                <p class="section-desc">Garbage in, garbage out. If your chunking strategy is bad, your RAG system will
-                    fail no matter how powerful the LLM is.</p>
-            </div>
-
-            <div class="concept-card">
-                <div class="concept-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">✂️</div>
-                <h3>Why do we Chunk?</h3>
-                <p>We cannot feed a 500-page PDF into an embedding model. Embedding models have small token limits
-                    (e.g., 512 or 8192 tokens max). Furthermore, long text dilutes the semantic meaning of the vector. A
-                    vector representing a whole book is useless for searching for a specific sentence.</p>
-
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Strategy</th>
-                            <th>How it works</th>
-                            <th>Pros / Cons</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Fixed Character Split</strong></td>
-                            <td>Splits strictly by length (e.g., every 1000 chars) with some overlap.</td>
-                            <td><strong>Pro:</strong> Easy to code.<br><strong>Con:</strong> Can cut sentences or words
-                                in half, destroying meaning.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Recursive Character Split</strong></td>
-                            <td>Tries to split by double-newline, then newline, then space, then character.</td>
-                            <td><strong>Pro:</strong> Respects paragraphs and sentences.<br><strong>Con:</strong>
-                                Standard baseline, but blind to actual document structure.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Semantic Chunking</strong></td>
-                            <td>Embeds individual sentences. Groups adjacent sentences that have high mathematical
-                                similarity.</td>
-                            <td><strong>Pro:</strong> Keeps cohesive thoughts together. Highly
-                                accurate.<br><strong>Con:</strong> Computationally expensive (requires embedding every
-                                sentence first).</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Logical/Markdown Chunking</strong></td>
-                            <td>Splits based on markdown headers (#, ##) or HTML tags.</td>
-                            <td><strong>Pro:</strong> Respects the author's intended structure.<br><strong>Con:</strong>
-                                Source docs must be well-formatted.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="info-box key">
-                    <div class="info-box-title">🔑 The Overlap Window</div>
-                    <p>Always include chunk <strong>overlap</strong> (e.g., chunk size 1000, overlap 200). If a crucial
-                        sentence spans the boundary of two chunks, splitting it cleanly breaks the context. Overlap
-                        ensures context bleeds over the edges so meaning isn't lost.</p>
-                </div>
-
-                <div class="code-block">
-                    <span class="code-label">Python / LangChain Style</span>
-                    <code><span class="keyword">def</span> <span class="function">recursive_split</span>(text, chunk_size=<span class="number">1000</span>, overlap=<span class="number">200</span>):
-    <span class="comment"># 1. Split on \n\n (Paragraphs)</span>
-    <span class="comment"># 2. If still too big, split on \n (Lines)</span>
-    <span class="comment"># 3. If still too big, split on spaces (Words)</span>
-    <span class="comment"># 4. Attach overlap to the end of chunk N and start of chunk N+1</span>
-    <span class="keyword">pass</span></code>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===================================================================
-     SECTION 4: VECTOR DATABASES
-     =================================================================== -->
-    <section class="section" id="vectordb">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-number">Chapter 04</div>
-                <h2 class="section-title">Vector Databases (ChromaDB)</h2>
-                <p class="section-desc">Where embeddings live. Unlike SQL databases that look for exact matches, Vector
-                    DBs search for "concepts that are mathematically close."</p>
-            </div>
-
-            <div class="concept-card">
-                <div class="concept-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue)">🗄️</div>
-                <h3>How Vector Search Works (ANN)</h3>
-                <p>If you have millions of documents, comparing your query vector to <em>every single document
-                        vector</em> (k-Nearest Neighbors / Exact Search) is too slow.</p>
-                <p>Vector databases use <strong>Approximate Nearest Neighbors (ANN)</strong>. They cluster vectors using
-                    algorithms like <strong>HNSW (Hierarchical Navigable Small World)</strong>, which builds a
-                    multi-layered graph. It drops onto the top layer, finds the closest cluster, drops to the next
-                    layer, and zooms in on the exact neighborhood almost instantly (logarithmic time).</p>
-
-                <div class="grid-2">
-                    <div class="mini-card">
-                        <h4>ChromaDB</h4>
-                        <p>Local, embedded, runs in memory or SQLite. What we use in our project. Perfect for
-                            prototyping and small-to-medium datasets.</p>
-                    </div>
-                    <div class="mini-card">
-                        <h4>Pinecone / Weaviate / Milvus</h4>
-                        <p>Managed, cloud-scale vector databases. Used in production when you have billions of vectors
-                            and need high concurrency.</p>
-                    </div>
-                    <div class="mini-card">
-                        <h4>pgvector (PostgreSQL)</h4>
-                        <p>An extension for Postgres. Amazing if you already have a Postgres DB and want to combine
-                            relational queries with vector search.</p>
+        <!-- ════════════ PHASE 1 BANNER ════════════ -->
+        <section class="section" id="howrag">
+            <div class="container">
+                <div class="phase-banner phase-1 reveal" data-emoji="🟢">
+                    <div class="phase-badge">🟢</div>
+                    <div>
+                        <h2>Phase 1: The Beginner Zone</h2>
+                        <p>We start from zero. What is an LLM? Why does it hallucinate? What is RAG? We build your
+                            mental model from the ground up before writing a single line of code.</p>
                     </div>
                 </div>
 
-                <div class="info-box interview">
-                    <div class="info-box-title">🎤 Interview Question</div>
-                    <p><strong>"How does Hybrid Search work in DBs like Weaviate or Pinecone?"</strong></p>
-                    <p><strong>Answer:</strong> Vector search (dense retrieval) is great for semantic meaning ("What is
-                        AI?"), but terrible at exact keyword matches ("Find the term 'XYZ-123'"). Hybrid Search combines
-                        <strong>Vector Search (Cosine Similarity)</strong> with traditional <strong>Keyword Search (BM25
-                            algorithm)</strong>. It runs both searches, normalizes the scores using a technique like
-                        Reciprocal Rank Fusion (RRF), and returns the combined best results. This is the industry
-                        standard for production RAG.</p>
+                <!-- CH 01 -->
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 01</div>
+                    <h2 class="section-title">What is RAG and Why Does it Exist?</h2>
+                    <p class="section-desc">Before understanding the solution, you must understand the problem so deeply
+                        you feel the pain yourself.</p>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(245,158,11,.12);color:var(--orange)">⚠️</div>
+                    <h3>The Fatal Flaws of LLMs (Without RAG)</h3>
+                    <p>Imagine GPT-4 is the world's most brilliant doctor. You've hired them to answer your patients'
+                        questions. But there's a problem:</p>
+                    <ul>
+                        <li>Their medical knowledge is frozen at <strong>their graduation date</strong> (training
+                            cutoff). New drugs, new research? They don't know.</li>
+                        <li>They have never read <strong>your hospital's specific policies, patient histories, or
+                                internal protocols.</strong></li>
+                        <li>When they don't know something, they don't say "I don't know." They <strong>confidently
+                                fabricate a plausible-sounding lie.</strong> This is called
+                            <strong>Hallucination</strong>.</li>
+                    </ul>
+                    <div class="callout warn">
+                        <div class="callout-title">⚠️ Hallucination is not a Bug — it's a Feature</div>
+                        <p>LLMs are trained to generate statistically plausible next tokens. They are pattern-completion
+                            machines, not fact-retrieval machines. Hallucination is mathematically inevitable when the
+                            model is asked something outside its training distribution.</p>
+                    </div>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(16,185,129,.12);color:var(--emerald)">💡</div>
+                    <h3>The RAG Solution: From Closed-Book to Open-Book Exam</h3>
+                    <p><strong>RAG (Retrieval-Augmented Generation)</strong>, introduced in the 2020 Lewis et al. paper,
+                        solves this elegantly.</p>
+                    <p style="margin-top:12px;">Instead of asking the model to remember facts from training, we
+                        <strong>retrieve the exact source documents</strong> at query time and inject them directly into
+                        the LLM's prompt:</p>
+                    <div class="diagram">WITHOUT RAG:
+                        User: "What is our company's refund policy?"
+                        LLM: "Your refund policy is 30 days." ← HALLUCINATED. The LLM guessed.
+
+                        WITH RAG:
+                        User: "What is our company's refund policy?"
+                        System: [Searches database → finds "14-day refund policy for digital goods"]
+                        Prompt: "Based on this context: '14-day refund policy for digital goods'
+                        Answer the user's question."
+                        LLM: "According to the documents, your company has a 14-day refund
+                        policy for digital goods." ← GROUNDED. Accurate. Traceable.</div>
+
+                    <div class="tag-row">
+                        <span class="tag tag-teal">✅ Grounded in Facts</span>
+                        <span class="tag tag-emerald">✅ Updatable (just update the DB)</span>
+                        <span class="tag tag-blue">✅ Private Data Support</span>
+                        <span class="tag tag-orange">✅ No Expensive Retraining</span>
+                    </div>
+                    <div class="callout tip">
+                        <div class="callout-title">💡 RAG vs Fine-Tuning — The Classic Interview Question</div>
+                        <p><strong>Fine-Tuning</strong> teaches the model <em>how to speak</em> in a certain style or
+                            domain language. It's terrible at injecting new factual knowledge reliably.
+                            <strong>RAG</strong> is for injecting live, dynamic facts at inference time. They are
+                            complementary, not competing.</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Link to Part 2 -->
-    <div id="retrieval"></div>
-    <div id="reranking"></div>
-    <div id="advanced"></div>
-    <div id="evaluation"></div>
+        <!-- ════════ CH 02 - TOKENS & EMBEDDINGS ════════ -->
+        <section class="section" id="tokenembed">
+            <div class="container">
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 02</div>
+                    <h2 class="section-title">Tokens & Embeddings — How AI Reads Text</h2>
+                    <p class="section-desc">Computers cannot understand words. Every word must be converted to numbers.
+                        This is the foundational bridge between human language and machine intelligence.</p>
+                </div>
 
-    <!-- Content continues in advanced.html, loaded via JS -->
-    <div id="content-part2"></div>
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(139,92,246,.12);color:var(--purple)">🔤</div>
+                    <h3>Tokenization: Breaking Text Into Pieces</h3>
+                    <p>An LLM does not read letter-by-letter or word-by-word. It reads <strong>tokens</strong> —
+                        sub-word units that balance vocabulary size with efficiency. The most common algorithm is
+                        <strong>Byte Pair Encoding (BPE)</strong>.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span></span><span></span><span></span></div><span
+                                class="code-lang">Python — Tokenization Demo</span>
+                        </div>
+                        <div class="code-body"><code><span class="c-kw">import</span> tiktoken
 
-    <script src="app.js"></script>
+enc = tiktoken.<span class="c-fn">get_encoding</span>(<span class="c-str">"cl100k_base"</span>)  <span class="c-cmt"># GPT-4 tokenizer</span>
+
+text = <span class="c-str">"unhappiness"</span>
+tokens = enc.<span class="c-fn">encode</span>(text)
+<span class="c-fn">print</span>(tokens)       <span class="c-cmt"># → [13066, 2136]  (2 tokens, not 1 word!)</span>
+<span class="c-fn">print</span>(enc.<span class="c-fn">decode</span>(tokens))  <span class="c-cmt"># → "unhappiness"</span>
+
+<span class="c-cmt"># Why this matters for RAG:</span>
+<span class="c-cmt"># ChromaDB default model has 512 token LIMIT per chunk</span>
+<span class="c-cmt"># GPT-4 context window is 128,000 tokens</span>
+<span class="c-cmt"># If your chunk is 300 words ≈ 450 tokens → fits safely!</span></code></div>
+                    </div>
+                    <div class="callout info">
+                        <div class="callout-title">📐 Token Costs Matter</div>
+                        <p>OpenAI charges per token. <code>gpt-4o</code> costs $0.0025 per 1K input tokens. If your
+                            retrieval returns 5 chunks of 500 tokens each, that's 2500 tokens × $0.0025 = ~$0.006 per
+                            query. At 1 million queries/day, that's $6,000/day in context costs alone. Efficient
+                            chunking saves real money.</p>
+                    </div>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(59,130,246,.12);color:var(--blue)">🧠</div>
+                    <h3>Embeddings: Giving Text a Location in Space</h3>
+                    <p>An <strong>embedding</strong> is a list of floating-point numbers (a vector) that represents the
+                        <em>meaning</em> of a piece of text. The magic: similar meanings map to similar vectors,
+                        regardless of the exact words used.</p>
+                    <div class="diagram">TEXT MEANING VECTOR (simplified to 3D for illustration)
+                        ─────────────────────────────────────────────────
+                        "dog" → [0.9, 0.1, 0.2]
+                        "puppy" → [0.88, 0.12, 0.25] ← close to "dog" ✅
+                        "cat" → [0.8, 0.6, 0.1] ← different but in "animal zone"
+                        "quantum" → [0.01, 0.9, 0.7] ← far away from all animals
+                        "K9" → [0.85, 0.15, 0.2] ← near "dog" despite different letters!
+
+                        Real embeddings: 768 to 3072 dimensions (OpenAI text-embedding-3-large)</div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span></span><span></span><span></span></div><span
+                                class="code-lang">Python — our embedding_generator.py</span>
+                        </div>
+                        <div class="code-body"><code><span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> SentenceTransformer
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+model = <span class="c-cls">SentenceTransformer</span>(<span class="c-str">"all-MiniLM-L6-v2"</span>)  <span class="c-cmt"># 384-dim, free local model</span>
+
+<span class="c-cmt"># Embed two semantically related sentences</span>
+v1 = model.<span class="c-fn">encode</span>(<span class="c-str">"The employee gets 15 vacation days per year"</span>)
+v2 = model.<span class="c-fn">encode</span>(<span class="c-str">"How many PTO days do workers receive?"</span>)
+
+<span class="c-cmt"># Cosine similarity — measures angle between vectors</span>
+similarity = np.dot(v1, v2) / (np.linalg.<span class="c-fn">norm</span>(v1) * np.linalg.<span class="c-fn">norm</span>(v2))
+<span class="c-fn">print</span>(<span class="c-fn">f</span><span class="c-str">f"Similarity: {similarity:.3f}"</span>)  <span class="c-cmt"># → ~0.78 (highly similar!)</span>
+<span class="c-cmt"># Even though the words are completely different!</span></code></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════ CH 03 - CHUNKING ════════ -->
+        <section class="section" id="chunking">
+            <div class="container">
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 03</div>
+                    <h2 class="section-title">Chunking Strategies — The Most Underrated Decision</h2>
+                    <p class="section-desc">Chunking is the single most impactful decision in a RAG system. Bad chunks =
+                        bad answers, no matter how powerful your LLM is.</p>
+                </div>
+
+                <div class="card reveal">
+                    <h3>Why We Can't Feed Entire Documents</h3>
+                    <ul>
+                        <li><strong>Embedding models have hard token limits</strong> (e.g., 512 tokens for MiniLM, 8192
+                            for OpenAI ada-002).</li>
+                        <li><strong>Long texts produce "diluted" vectors</strong>. A vector for an entire book tries to
+                            represent everything, so it ends up representing nothing precisely.</li>
+                        <li><strong>LLM context windows cost money</strong> and have hard limits. Sending 100 pages to
+                            GPT-4 per query = 40,000+ tokens = expensive and slow.</li>
+                    </ul>
+                </div>
+
+                <div class="table-wrap reveal">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Strategy</th>
+                                <th>How It Works</th>
+                                <th>Best For</th>
+                                <th>Weakness</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Fixed Character Split</strong></td>
+                                <td>Cut every N characters, add overlap window</td>
+                                <td>Quick prototypes, testing</td>
+                                <td>Cuts sentences mid-way, destroys meaning</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recursive Character Split</strong></td>
+                                <td>Tries \n\n → \n → space → char in priority order</td>
+                                <td>✅ Most text documents (baseline)</td>
+                                <td>Blind to document's semantic topics</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Semantic Chunking</strong></td>
+                                <td>Embeds every sentence; splits on cosine distance drops</td>
+                                <td>Research docs, unstructured text</td>
+                                <td>Very slow — embeds all sentences first</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Markdown/Header Split</strong></td>
+                                <td>Splits on # / ## / ### headers</td>
+                                <td>Technical docs, READMEs, wikis</td>
+                                <td>Needs clean, structured source</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Parent-Child Split</strong></td>
+                                <td>Small child chunks for search, large parent for context</td>
+                                <td>✅ Production enterprise RAG</td>
+                                <td>More complex storage (two stores)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">🔬</div>
+                    <h3>Our Implementation: chunker.py</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span></span><span></span><span></span></div><span
+                                class="code-lang">chunker.py — recursive character split with overlap</span>
+                        </div>
+                        <div class="code-body"><code><span class="c-kw">from</span> langchain.text_splitter <span class="c-kw">import</span> RecursiveCharacterTextSplitter
+
+<span class="c-kw">def</span> <span class="c-fn">chunk_text</span>(text: str) -> list[str]:
+    splitter = <span class="c-cls">RecursiveCharacterTextSplitter</span>(
+        chunk_size=<span class="c-num">1000</span>,        <span class="c-cmt"># ~700 words per chunk</span>
+        chunk_overlap=<span class="c-num">200</span>,    <span class="c-cmt"># 200-char overlap prevents context loss at boundaries</span>
+        separators=[<span class="c-str">"\n\n"</span>, <span class="c-str">"\n"</span>, <span class="c-str">" "</span>, <span class="c-str">""</span>]  <span class="c-cmt"># priority order</span>
+    )
+    chunks = splitter.<span class="c-fn">split_text</span>(text)
+    <span class="c-kw">return</span> chunks
+
+<span class="c-cmt"># Real example:</span>
+<span class="c-cmt"># Input: 47,000 character PDF → 52 overlapping chunks</span>
+<span class="c-cmt"># Without overlap: context lost at chunk 22/23 boundary</span>
+<span class="c-cmt"># With overlap: answer to "…mentioned in paragraph before the table…"</span>
+<span class="c-cmt">#              bleeds into both chunk 22 AND 23 → retrieved correctly</span></code></div>
+                    </div>
+                    <div class="callout key">
+                        <div class="callout-title">🔑 The Golden Rule of Chunking</div>
+                        <p>Your chunk size should match your expected answer size. If users ask specific,
+                            single-sentence questions → smaller chunks (300-500 chars). If users ask broad,
+                            multi-paragraph questions → larger chunks (800-1500 chars). There is no universally correct
+                            chunk size.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════ CH 04 - VECTOR DB ════════ -->
+        <section class="section" id="vectordb">
+            <div class="container">
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 04</div>
+                    <h2 class="section-title">Vector Databases — The AI's Memory Bank</h2>
+                    <p class="section-desc">A vector database doesn't look for matching keywords. It looks for matching
+                        meanings — concepts that are mathematically "close."</p>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(59,130,246,.12);color:var(--blue)">🗄️</div>
+                    <h3>The Mathematics of Similarity Search</h3>
+                    <p>Every chunk in your database is stored as a point in high-dimensional space. When you ask a
+                        question, the question is also converted to a vector. The database finds the <strong>N nearest
+                            neighbors</strong> using cosine similarity.</p>
+                    <div class="diagram"> VECTOR SPACE (simplified to 2D)
+
+                        "cat behavior" (0.82, 0.6) ●
+                        ↗ cosine angle = 12° → very close!
+                        User Query Vector: ↗
+                        "How do cats show affection?" ● ← Query Vector
+                        ↘ cosine angle = 85° → far away
+                        "Python syntax" (0.1, 0.95) ●
+
+                        Cosine Similarity = cos(θ)
+                        = (A · B) / (|A| × |B|) ∈ [-1, 1]
+                        → 1.0 = identical meaning
+                        → 0.0 = completely unrelated
+                        → -1 = opposite meanings (rare in practice)</div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span></span><span></span><span></span></div><span
+                                class="code-lang">vector_db.py — our ChromaDB implementation</span>
+                        </div>
+                        <div class="code-body"><code><span class="c-kw">import</span> chromadb
+<span class="c-kw">from</span> chromadb.utils <span class="c-kw">import</span> embedding_functions
+
+client = chromadb.<span class="c-fn">PersistentClient</span>(path=<span class="c-str">"./chroma_db"</span>)  <span class="c-cmt"># auto-saves to disk</span>
+embed_fn = embedding_functions.<span class="c-cls">SentenceTransformerEmbeddingFunction</span>(
+    model_name=<span class="c-str">"all-MiniLM-L6-v2"</span>
+)
+collection = client.<span class="c-fn">get_or_create_collection</span>(
+    name=<span class="c-str">"my_documents"</span>,
+    embedding_function=embed_fn,
+    metadata={<span class="c-str">"hnsw:space"</span>: <span class="c-str">"cosine"</span>}  <span class="c-cmt"># use cosine distance</span>
+)
+
+<span class="c-cmt"># Add chunks (ChromaDB auto-embeds them!)</span>
+collection.<span class="c-fn">add</span>(
+    documents=chunks,       <span class="c-cmt"># list of text strings</span>
+    ids=[<span class="c-fn">f</span><span class="c-str">f"chunk_{i}"</span> <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-fn">len</span>(chunks))],
+    metadatas=[{<span class="c-str">"source"</span>: <span class="c-str">"policy.pdf"</span>, <span class="c-str">"page"</span>: i} <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-fn">len</span>(chunks))]
+)
+
+<span class="c-cmt"># Query (ChromaDB auto-embeds the query too!)</span>
+results = collection.<span class="c-fn">query</span>(
+    query_texts=[<span class="c-str">"What is the vacation policy?"</span>],
+    n_results=<span class="c-num">3</span>   <span class="c-cmt"># return top 3 most similar chunks</span>
+)</code></div>
+                    </div>
+                </div>
+
+                <div class="card reveal">
+                    <h3>Vector DB Comparison: What to Use When</h3>
+                    <div class="grid-3">
+                        <div class="mini-card">
+                            <h4>🟢 ChromaDB</h4>
+                            <p>Embedded, local, zero setup. Stores in SQLite. What we use in this project. Perfect for
+                                prototyping and small to medium datasets (&lt;1M chunks).</p>
+                            <div class="tag-row"><span class="tag tag-emerald">Local</span><span
+                                    class="tag tag-teal">Free</span></div>
+                        </div>
+                        <div class="mini-card">
+                            <h4>🔵 Pinecone</h4>
+                            <p>Managed cloud DB. Handles billions of vectors. Has Hybrid Search and metadata filtering
+                                built-in. Best for large-scale production.</p>
+                            <div class="tag-row"><span class="tag tag-blue">Cloud</span><span
+                                    class="tag tag-orange">Paid</span></div>
+                        </div>
+                        <div class="mini-card">
+                            <h4>🟣 Weaviate / Qdrant</h4>
+                            <p>Open-source, self-hostable or cloud. Excellent hybrid search. Qdrant is especially fast
+                                and written in Rust. Great middle ground.</p>
+                            <div class="tag-row"><span class="tag tag-purple">Hybrid</span><span
+                                    class="tag tag-teal">Open Source</span></div>
+                        </div>
+                        <div class="mini-card">
+                            <h4>⚡ FAISS</h4>
+                            <p>Facebook AI Similarity Search. A library, not a database. Blazingly fast but no
+                                persistence, no metadata filtering, manual management.</p>
+                            <div class="tag-row"><span class="tag tag-orange">Research</span><span
+                                    class="tag tag-teal">Local</span></div>
+                        </div>
+                        <div class="mini-card">
+                            <h4>🐘 pgvector</h4>
+                            <p>PostgreSQL extension. If you already have Postgres, add vector search with a simple
+                                extension. Perfect for apps with existing SQL data.</p>
+                            <div class="tag-row"><span class="tag tag-blue">SQL+Vectors</span></div>
+                        </div>
+                        <div class="mini-card">
+                            <h4>🔺 Milvus</h4>
+                            <p>Highly scalable, cloud-native vector DB. Used by Zilliz. Great for billion-vector scale.
+                                More complex setup than Pinecone.</p>
+                            <div class="tag-row"><span class="tag tag-purple">Enterprise</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════ CH 05 - NAIVE PIPELINE ════════ -->
+        <section class="section" id="naivepipeline">
+            <div class="container">
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 05</div>
+                    <h2 class="section-title">The Naive RAG Pipeline — End-to-End</h2>
+                    <p class="section-desc">Now let's connect everything. This is the foundational pipeline that every
+                        advanced technique builds upon.</p>
+                </div>
+
+                <div class="card reveal">
+                    <h3>Complete Naive RAG Flow</h3>
+                    <div class="diagram">═══════════════════════════════════════════════════════════
+                        PHASE 1: INGESTION (One-time setup — run once per dataset)
+                        ═══════════════════════════════════════════════════════════
+
+                        📄 Raw Documents (PDFs, TXT, Web pages, Notion, Confluence)
+                        │
+                        ▼ [data_loader.py]
+                        📝 Extract Plain Text
+                        │
+                        ▼ [chunker.py]
+                        ✂️ Split into Overlapping Chunks
+                        "company_policy.pdf" → 47 chunks of ~1000 chars each
+                        │
+                        ▼ [embedding_generator.py]
+                        🔢 Embed each chunk into a 384-dim vector using MiniLM
+                        │
+                        ▼ [vector_db.py]
+                        🗄️ Store vectors + raw text + metadata in ChromaDB
+                        ./chroma_db/ created automatically on disk
+
+
+                        ═══════════════════════════════════════════════════════════
+                        PHASE 2: QUERYING (Real-time — runs on every user message)
+                        ═══════════════════════════════════════════════════════════
+
+                        👤 User: "What is our remote work policy?"
+                        │
+                        ▼ Embed question → q_vector = [0.34, 0.71, ..., 0.09]
+                        │
+                        ▼ ChromaDB.query(q_vector, n_results=3)
+                        Finds chunks with highest cosine similarity
+                        Returns: [chunk_12, chunk_15, chunk_28]
+                        │
+                        ▼ [rag_pipeline.py] Build the prompt:
+                        ┌─────────────────────────────────────────────────┐
+                        │ SYSTEM: You are a helpful HR assistant. Answer │
+                        │ ONLY using the provided context. If the answer │
+                        │ is not in the context, say "I don't know." │
+                        │ │
+                        │ CONTEXT: │
+                        │ [chunk_12 text here] │
+                        │ [chunk_15 text here] │
+                        │ [chunk_28 text here] │
+                        │ │
+                        │ QUESTION: What is our remote work policy? │
+                        └─────────────────────────────────────────────────┘
+                        │
+                        ▼ Groq API (Llama-3-70b) generates answer
+                        │
+                        ▼ 🤖 "According to the company policy document,
+                        employees may work remotely up to 3 days per
+                        week after completing 6 months of employment."</div>
+                    <div class="callout inter">
+                        <div class="callout-title">🎤 Top Interview Question</div>
+                        <p><strong>"What are the limitations of Naive RAG?"</strong><br><br>
+                            <strong>Answer:</strong> Naive RAG fails when: (1) The user's query is vague or poorly
+                            phrased, leading to bad retrieval. (2) The answer requires connecting information from
+                            multiple chunks (multi-hop reasoning). (3) The domain requires exact keyword matches like
+                            serial numbers or codes (vector search misses these). (4) There's no mechanism to detect if
+                            retrieved chunks are actually relevant or not. These are the problems that Advanced RAG
+                            solves.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Insert advanced content here -->
+        <div id="advanced-content"></div>
+
+        <script src="app.js"></script>
+    </main>
 </body>
 
 </html>

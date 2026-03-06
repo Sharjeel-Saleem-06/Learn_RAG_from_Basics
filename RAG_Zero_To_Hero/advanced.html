@@ -1,354 +1,958 @@
-<!-- ===================================================================
-     SECTION 5: ADVANCED RETRIEVAL (Query Transformation)
-     =================================================================== -->
-<section class="section">
+<!-- ================================================================
+     ADVANCED CONTENT: Chapters 6-16
+     Loaded dynamically by app.js
+================================================================ -->
+
+<!-- PHASE 2 BANNER -->
+<section class="section" id="querytrans">
     <div class="container">
-        <div class="section-header">
-            <div class="section-number">Chapter 05</div>
-            <h2 class="section-title">Query Transformation</h2>
-            <p class="section-desc">If the user's prompt is terrible, a simple Vector Search will return terrible
-                chunks. Advanced RAG transforms the query BEFORE searching.</p>
+        <div class="phase-banner phase-2 reveal" data-emoji="🔵">
+            <div class="phase-badge">🔵</div>
+            <div>
+                <h2>Phase 2: Intermediate — Advanced Retrieval</h2>
+                <p>Naive RAG fails. Here's how to fix every known failure mode using proven techniques from 2024
+                    research papers and production systems.</p>
+            </div>
         </div>
 
-        <!-- Multi-Query -->
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(20,184,166,0.12);color:var(--accent-teal)">🔀</div>
-            <h3>Multi-Query Retrieval</h3>
-            <p>Users often ask vague questions. RAG systems can suffer heavily from missing context due to a slightly
-                misphrased question.</p>
-
-            <div class="diagram">
-                1. User Query: "How does the vacation policy work?"
-
-                2. Pass Query to LLM → Generate 3 variations
-                - "What are the rules for taking time off?"
-                - "How many PTO days do employees get?"
-                - "Company leave and absence guidelines."
-
-                3. Embed ALL 4 queries. Run 4 vector searches.
-                4. Synthesize the combined unique results (remove duplicates).
-                5. Feed resulting chunks to LLM for the final answer.</div>
-            <p><strong>Result:</strong> Massively increased recall. You catch documents that answer the intent but use
-                different wording.</p>
+        <!-- CH 06 -->
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 06</div>
+            <h2 class="section-title">Query Transformation — Fix the User Before Searching</h2>
+            <p class="section-desc">The user is the weakest link. If their question is bad, vector search returns
+                useless chunks. Query transformation uses a lightweight LLM to improve the query before searching.</p>
         </div>
 
-        <!-- HyDE -->
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue)">✨</div>
-            <h3>HyDE (Hypothetical Document Embeddings)</h3>
-            <p>This is arguably the most powerful query transformation technique.</p>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">🔀</div>
+            <h3>Technique 1: Multi-Query Retrieval</h3>
+            <p>A single question can have many valid phrasings. Multi-Query generates 3–5 variations and searches for
+                each.</p>
+            <div class="diagram">ORIGINAL QUERY: "How does the time-off policy work?"
 
-            <div class="diagram">
-                1. User Query: "What is AlphaFold?"
+                LLM GENERATES VARIATIONS:
+                1. "What are the rules for taking time off at this company?"
+                2. "How many PTO days do employees receive per year?"
+                3. "What is the process to request vacation leave?"
+                4. "Company leave and absence guidelines"
 
-                2. Prompt LLM to write a HYPOTHETICAL answer to the query (it will likely hallucinate facts, but it will
-                use the correct terminology and structure).
-                Hypothetical Answer: "AlphaFold is an AI system developed by DeepMind that predicts 3D protein
-                structures..."
+                ACTIONS:
+                → Run 4 independent vector searches
+                → Collect top-3 results from each = up to 12 chunks
+                → Deduplicate using exact text matching
+                → Feed final unique set to generation LLM
 
-                3. Embed the HYPOTHETICAL ANSWER, not the user's query.
-                4. Search the Vector DB using that embedding.</div>
-            <p><strong>Why it works:</strong> The user's query is a question format. The documents in the DB are answer
-                formats (textbooks, manuals). An embedding model maps similar semantic structures closer together. By
-                embedding a fake answer, you search the <em>answer neighborhood</em> of the vector space, not the
-                <em>question neighborhood</em>.
-            </p>
+                RESULT: Dramatically increased RECALL. You covered
+                4 different "directions" in vector space, catching
+                documents that match the intent but use different words.</div>
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Python —
+                        Multi-Query with Groq</span>
+                </div>
+                <div class="code-body"><code><span class="c-kw">from</span> groq <span class="c-kw">import</span> Groq
+
+<span class="c-kw">def</span> <span class="c-fn">generate_query_variants</span>(query: str, n: int = <span class="c-num">4</span>) -> list[str]:
+    client = <span class="c-cls">Groq</span>()
+    response = client.chat.completions.<span class="c-fn">create</span>(
+        model=<span class="c-str">"llama3-70b-8192"</span>,
+        messages=[{
+            <span class="c-str">"role"</span>: <span class="c-str">"user"</span>,
+            <span class="c-str">"content"</span>: <span class="c-fn">f</span><span class="c-str">f"""Generate {n} different phrasings of this question.
+Return ONLY a JSON list of strings, nothing else.
+Question: {query}"""</span>
+        }]
+    )
+    <span class="c-kw">import</span> json
+    variants = json.<span class="c-fn">loads</span>(response.choices[<span class="c-num">0</span>].message.content)
+    <span class="c-kw">return</span> [query] + variants  <span class="c-cmt"># include original too!</span></code>
+                </div>
+            </div>
         </div>
 
-        <!-- Parent-Child -->
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">👪</div>
-            <h3>Parent-Child Retrieval (Auto-Merging)</h3>
-            <p>A classic tradeoff: Small chunks (sentence level) have highly precise vectors for search, but they lack
-                surrounding context. Large chunks (paragraph level) have great context for the LLM, but their vectors
-                are muddy and hard to search for specific facts.</p>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(59,130,246,.12);color:var(--blue)">✨</div>
+            <h3>Technique 2: HyDE — Hypothetical Document Embeddings</h3>
+            <p>This is the most powerful query transformation technique. It exploits a fundamental fact of vector space
+                geometry.</p>
+            <div class="callout warn">
+                <div class="callout-title">🧠 The Core Insight Behind HyDE</div>
+                <p>User queries exist in <strong>"question space"</strong> in the vector embedding model. Documents in
+                    your database exist in <strong>"answer space."</strong> These semantic neighborhoods are
+                    <em>geometrically different</em>. By generating a hypothetical answer first, you move from
+                    question-space into answer-space and get dramatically better search results.</p>
+            </div>
+            <div class="diagram">STANDARD RAG:
+                Query: "What causes quantum entanglement?" → Vector
+                Searches: Answer documents in the DB (answer-space)
+                Problem: Question vector is geometrically far from answer vectors!
 
+                HYDE:
+                Step 1: Send query to LLM → Generate HYPOTHETICAL answer
+                (It may hallucinate details but uses correct terminology)
+                Result: "Quantum entanglement occurs when two particles
+                become correlated such that measuring one instantly
+                affects the other, regardless of distance…"
+
+                Step 2: Embed the HYPOTHETICAL ANSWER (not the user's query)
+                Step 3: Search using this embedding
+
+                WHY IT WORKS: The fake answer has same vocabulary, structure,
+                and semantic "neighborhood" as real answer documents in DB.
+                You search answer-space FROM answer-space! → 40-60% recall boost</div>
+        </div>
+
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(139,92,246,.12);color:var(--purple)">🔙</div>
+            <h3>Technique 3: Step-Back Prompting</h3>
+            <p>Sometimes a question is too specific, and the answer lives in a broader context document. Step-Back asks
+                the LLM to first understand the broader principle, then answer the specific question.</p>
+            <div class="diagram">SPECIFIC QUERY:
+                "Why did the iPhone XS have cellular reception issues in 2018?"
+
+                STEP-BACK (Broader Question):
+                "What factors cause poor cellular reception in smartphones?"
+
+                SEARCH: Run vector search for BOTH the specific AND broad question.
+                RESULT: The specific chunk + high-level context document are retrieved.
+                GENERATION: LLM has both the specific answer AND the principles
+                needed to explain WHY, producing a richer, deeper answer.</div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 07 - HYBRID SEARCH -->
+<section class="section" id="hybrid">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 07</div>
+            <h2 class="section-title">Hybrid Search — Best of Both Worlds</h2>
+            <p class="section-desc">Vector (dense) search is great for meaning but fails at exact matches. Keyword
+                (sparse) search is great at exact matches but misses synonyms. Combine them.</p>
+        </div>
+
+        <div class="card reveal">
+            <h3>Dense vs Sparse Retrieval</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Dense (Vector) Search</th>
+                            <th>Sparse (Keyword/BM25) Search</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Algorithm</td>
+                            <td>Cosine similarity on embeddings</td>
+                            <td>BM25 (TF-IDF variant)</td>
+                        </tr>
+                        <tr>
+                            <td>Best at</td>
+                            <td>Semantic meaning, synonyms, paraphrases</td>
+                            <td>Exact keyword matches, codes, names</td>
+                        </tr>
+                        <tr>
+                            <td>Fails at</td>
+                            <td>Exact product codes (XYZ-99B), abbreviations</td>
+                            <td>Synonyms ("car" ≠ "automobile")</td>
+                        </tr>
+                        <tr>
+                            <td>Example</td>
+                            <td>"Tell me about dog training" finds "puppy obedience" ✅</td>
+                            <td>"Error code ABC-123" finds exact string ✅</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="diagram">HYBRID SEARCH — Reciprocal Rank Fusion (RRF)
+
+                Query: "Patient medication side effects for compound XR-450"
+                ┌──────────────────────────────────────────────────────┐
+                │ DENSE SEARCH (meaning) │ SPARSE SEARCH (keywords) │
+                │ → drug interaction docs │ → documents with "XR-450" │
+                │ → medication review docs │ → "compound XR" exact hit │
+                └──────────────────────────────────────────────────────┘
+                ↓ Merge via Reciprocal Rank Fusion
+                RRF Score = Σ 1/(rank_i + k) for each retrieval system
+                ↓
+                Combined results ranked by unified relevance score
+                → Best of both: semantic context + exact term matching</div>
+            <div class="callout info">
+                <div class="callout-title">💡 Where Hybrid Search Lives</div>
+                <p><strong>Weaviate, Qdrant, Pinecone</strong> all support Hybrid Search natively. For ChromaDB, you'd
+                    implement it separately using BM25 (via <code>rank_bm25</code> library) and merge the result
+                    rankings manually using RRF scoring.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 08 - RERANKING -->
+<section class="section" id="reranking">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 08</div>
+            <h2 class="section-title">Re-Ranking — The Precision Layer</h2>
+            <p class="section-desc">Vector search retrieves fast but coarsely. A Re-Ranker reads the query and document
+                TOGETHER for surgical precision.</p>
+        </div>
+
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(245,158,11,.12);color:var(--orange)">⚖️</div>
+            <h3>Bi-Encoder vs Cross-Encoder</h3>
+            <div class="diagram">BI-ENCODER (Standard Vector Search — what ChromaDB does):
+                Query → Encoder → q_vector
+                Document → Encoder → d_vector
+                Similarity = cosine(q_vector, d_vector)
+
+                PROBLEM: Query and document are encoded INDEPENDENTLY
+                The model never "reads" them together!
+                Speed: O(1) at search time. ✅
+                Precision: Coarse. Mathematically similar ≠ contextually relevant ❌
+
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                CROSS-ENCODER (Re-Ranker — applied AFTER initial retrieval):
+                Input: [QUERY] + [SEP] + [DOCUMENT] → fed TOGETHER into model
+                Output: Relevance score (0.0 to 1.0)
+
+                The model READS the interaction between query and document!
+                Speed: Slow (runs on every chunk). Must use after pre-filtering.
+                Precision: Extremely high. ✅
+
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                TWO-STAGE PIPELINE (Production Standard):
+                Stage 1: ChromaDB retrieves top 20-50 chunks (fast, bi-encoder)
+                Stage 2: Cross-Encoder re-scores all 20 chunks
+                Stage 3: Take top 3-5 by cross-encoder score → feed to LLM
+                Result: Speed of bi-encoder + precision of cross-encoder ✅</div>
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Python —
+                        Cross-Encoder Reranking</span>
+                </div>
+                <div class="code-body">
+                    <code><span class="c-kw">from</span> sentence_transformers <span class="c-kw">import</span> CrossEncoder
+
+<span class="c-cmt"># Load cross-encoder model (runs locally, free)</span>
+reranker = <span class="c-cls">CrossEncoder</span>(<span class="c-str">"BAAI/bge-reranker-base"</span>)  
+
+<span class="c-kw">def</span> <span class="c-fn">rerank_chunks</span>(query: str, chunks: list[str], top_k: int = <span class="c-num">3</span>) -> list[str]:
+    <span class="c-cmt"># Pair query with every chunk</span>
+    pairs = [(query, chunk) <span class="c-kw">for</span> chunk <span class="c-kw">in</span> chunks]
+    
+    <span class="c-cmt"># Score all pairs (query reads each doc together)</span>
+    scores = reranker.<span class="c-fn">predict</span>(pairs)
+    
+    <span class="c-cmt"># Sort by score descending, return top_k</span>
+    ranked = <span class="c-fn">sorted</span>(<span class="c-fn">zip</span>(scores, chunks), reverse=<span class="c-cls">True</span>)
+    <span class="c-kw">return</span> [chunk <span class="c-kw">for</span> _, chunk <span class="c-kw">in</span> ranked[:top_k]]
+
+<span class="c-cmt"># Usage in pipeline:</span>
+rough_results = chromadb.<span class="c-fn">query</span>(question, n_results=<span class="c-num">20</span>)  <span class="c-cmt"># get 20 coarse</span>
+final_chunks  = <span class="c-fn">rerank_chunks</span>(question, rough_results, top_k=<span class="c-num">3</span>) <span class="c-cmt"># filter to 3 precise</span></code>
+                </div>
+            </div>
+            <div class="callout tip">
+                <div class="callout-title">💡 Cohere Rerank API</div>
+                <p>If you don't want to run a local model, <strong>Cohere Rerank</strong> is a drop-in API that provides
+                    state-of-the-art cross-encoder re-ranking. One API call takes your 20 chunks and returns them sorted
+                    by relevance. Typically boosts RAG accuracy by <strong>10–25%</strong>.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 09 - PARENT-CHILD -->
+<section class="section" id="parentchild">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 09</div>
+            <h2 class="section-title">Parent-Child Retrieval — The Search/Context Paradox Solved</h2>
+            <p class="section-desc">Small chunks = precise search. Large chunks = rich LLM context. Parent-Child
+                retrieval gives you both simultaneously.</p>
+        </div>
+
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(16,185,129,.12);color:var(--emerald)">👪</div>
+            <h3>The Fundamental Tradeoff</h3>
+            <div class="diagram">THE DILEMMA:
+
+                SMALL CHUNKS (200 tokens):
+                ✅ Highly precise vector embeddings
+                ✅ Great for finding the exact sentence that answers the question
+                ❌ Too little context for LLM to write a coherent answer
+
+                LARGE CHUNKS (2000 tokens):
+                ✅ Rich context — LLM understands the full picture
+                ❌ "Muddy" embeddings — vector contains 10 topics at once
+                ❌ Bad retrieval precision — retrieved for wrong reasons
+
+                PARENT-CHILD SOLUTION:
+                → INDEX small child chunks (200 tokens) — for precise search
+                → RETURN large parent chunks (2000 tokens) — for LLM context
+
+                USER QUESTION → Search child chunks (precision) ✅
+                → Find matching child → look up its parent
+                → Send parent chunk to LLM (context) ✅
+                BEST OF BOTH WORLDS! 🎯</div>
+            <div class="step-flow">
+                <div class="step reveal">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <h4>Split into Parent Chunks</h4>
+                        <p>Take your document and create large, 1500-2000 token chunks. These are page-level passages
+                            with full context. Store them in a simple document store (dict, JSON file, or Mongo).</p>
+                    </div>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <h4>Split Parents into Child Chunks</h4>
+                        <p>Take each parent chunk and split it further into small 100-200 token child chunks. Each child
+                            gets a <code>parent_id</code> metadata field linking it back.</p>
+                    </div>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                        <h4>Index ONLY the Child Chunks</h4>
+                        <p>Embed only the small child chunks into ChromaDB. Do NOT embed the parent chunks. The vector
+                            database only contains the precise, easily-searchable small pieces.</p>
+                    </div>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">4</div>
+                    <div class="step-body">
+                        <h4>Retrieve: Child Search → Parent Delivery</h4>
+                        <p>User asks a question → Search child chunks → Find top 3 matching children → Retrieve their
+                            parent chunks from the document store → Send parents to the LLM.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 10 - PROMPT ENGINEERING -->
+<section class="section" id="prompteng">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 10</div>
+            <h2 class="section-title">Prompt Engineering for RAG</h2>
+            <p class="section-desc">The quality of your system prompt determines whether your RAG system is helpful or
+                dangerous. A bad prompt produces a hallucinating LLM even with perfect retrieval.</p>
+        </div>
+        <div class="card reveal">
+            <h3>The Anatomy of a Perfect RAG Prompt</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span></div><span
+                        class="code-lang">rag_pipeline.py — optimal system prompt</span>
+                </div>
+                <div class="code-body"><code>SYSTEM_PROMPT = <span class="c-str">"""You are a precise, factual assistant.
+Your ONLY job is to answer the user's question using the CONTEXT provided below.
+
+STRICT RULES:
+1. Answer ONLY from the Context. Do NOT use your training knowledge.
+2. If the answer is not in the Context, respond: "I don't have enough 
+   information in the provided documents to answer this question."
+3. Do NOT make assumptions beyond what is explicitly stated.
+4. Quote the relevant part of the context to support your answer.
+5. If Context contains conflicting information, mention the conflict.
+
+CONTEXT:
+{context}
+
+Remember: Only use the above Context. Never fabricate information."""</span>
+
+<span class="c-cmt"># Why these rules matter:</span>
+<span class="c-cmt"># Rule 1: Prevents the LLM from "helpfully" adding training knowledge</span>
+<span class="c-cmt"># Rule 2: Teaches graceful failure instead of hallucination</span>
+<span class="c-cmt"># Rule 3: Stops inference chains that lead to incorrect conclusions</span>
+<span class="c-cmt"># Rule 4: Forces the model to cite its source (auditable!)</span></code></div>
+            </div>
+            <div class="callout inter">
+                <div class="callout-title">🎤 Interview: How do you prevent RAG hallucinations?</div>
+                <p><strong>Answer:</strong> (1) Strict system prompt with explicit "only use context" instruction. (2)
+                    Set <code>temperature=0.0</code> or 0.1 to reduce creativity/randomness. (3) Implement Self-RAG
+                    post-processing — a second LLM verifies the answer against context. (4) Ensure chunk overlap to
+                    prevent context boundary artifacts. (5) Use a cross-encoder re-ranker to eliminate irrelevant chunks
+                    before they reach the LLM.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PHASE 3 BANNER -->
+<section class="section" id="agenticrag">
+    <div class="container">
+        <div class="phase-banner phase-3 reveal" data-emoji="🔴">
+            <div class="phase-badge">🔴</div>
+            <div>
+                <h2>Phase 3: Advanced — Production-Grade Systems</h2>
+                <p>The cutting edge. Agentic loops, knowledge graphs, multi-modal retrieval, self-reflection, and how to
+                    measure and deploy everything at scale.</p>
+            </div>
+        </div>
+
+        <!-- CH 11 -->
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 11</div>
+            <h2 class="section-title">Agentic RAG — When RAG Gets a Brain</h2>
+            <p class="section-desc">Traditional RAG is a dumb pipe: Query → Search → Generate. Agentic RAG adds loops,
+                decision-making, and self-correction to the pipeline.</p>
+        </div>
+
+        <div class="card reveal">
+            <h3>The Four Agentic Patterns</h3>
             <div class="grid-2">
                 <div class="mini-card">
-                    <h4>The Process</h4>
-                    <p>1. Split document into Large Parent Chunks (1000 tokens).<br>2. Split Parents into Small Child
-                        Chunks (100 tokens).<br>3. ONLY embed and index the Child Chunks.<br>4. When a Child is
-                        retrieved, DO NOT pass it to the LLM. Instead, look up its Parent Chunk and pass the full
-                        Parent.</p>
+                    <h4>🔀 Adaptive RAG (Router)</h4>
+                    <p>An LLM classifies the query FIRST: Is it small talk? Simple fact? Complex multi-hop? Real-time
+                        event? Routes to the appropriate handler: direct reply, vector search, web search, or a full
+                        agent chain.</p>
                 </div>
                 <div class="mini-card">
-                    <h4>Why it's amazing</h4>
-                    <p>You get the extremely high precision and recall of searching tiny, specific chunks, but you give
-                        the final generator the full surrounding context it needs to write a cohesive, accurate answer.
-                    </p>
+                    <h4>🔁 Self-RAG (Self-Reflection)</h4>
+                    <p>After generating an answer, a second LLM check: "Is every fact in this answer supported by the
+                        retrieved context?" If not, regenerate. This is LLM-as-Judge on your own outputs.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>🩺 Corrective RAG (CRAG)</h4>
+                    <p>After retrieval but before generation, an evaluator grades the chunks: Relevant / Ambiguous /
+                        Irrelevant. If Irrelevant → trigger web search fallback. If Ambiguous → apply query refinement.
+                        Only if Relevant → generate.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>🔄 Iterative RAG</h4>
+                    <p>For complex multi-hop questions: Retrieve → Read → Identify what's still unknown → Retrieve again
+                        → Repeat until answer is complete. Built with LangGraph or a ReAct agent loop.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card reveal">
+            <h3>Corrective RAG (CRAG) Architecture</h3>
+            <div class="diagram">USER QUERY: "What is the latest breakthrough in Alzheimer's treatment in 2025?"
+                │
+                ▼ Vector Search → retrieves 5 chunks from internal medical docs
+                │
+                ▼ ┌─────────────────────────────────────────────────────────┐
+                │ EVALUATOR LLM: │
+                │ "Are these chunks relevant, ambiguous, or irrelevant?" │
+                └─────────────────────────────────────────────────────────┘
+                │
+                ├── RELEVANT: Direct to generation. Use the chunks. ✅
+                │
+                ├── AMBIGUOUS: Apply query reformulation, search again.
+                │
+                └── IRRELEVANT: Internal DB lacks 2025 info (knowledge cutoff!)
+                │
+                ▼ Trigger WEB SEARCH FALLBACK
+                Serper / Tavily / Bing API → real-time 2025 data
+                │
+                ▼ Summarize + filter web results
+                │
+                ▼ Generate answer from web context ✅
+
+                RESULT: Your private LLM now has access to the public internet
+                ONLY when its internal knowledge fails! Best of both. 🎯</div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 12 - GRAPHRAG -->
+<section class="section" id="graphrag">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 12</div>
+            <h2 class="section-title">GraphRAG — Connecting the Dots</h2>
+            <p class="section-desc">Vector RAG answers "what chunk is similar to this query?" GraphRAG answers "how are
+                all these entities connected across the entire dataset?"</p>
+        </div>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(139,92,246,.12);color:var(--purple)">🕸️</div>
+            <h3>When Vector RAG Fails — And GraphRAG Wins</h3>
+            <div class="diagram">QUESTION: "What are all the connections between Apple, Microsoft, and Google
+                as revealed across these 500 internal research documents?"
+
+                VECTOR RAG: Retrieves isolated chunks. Can't answer.
+                → Returns 3 chunks about Apple's partnerships
+                → Misses the 50 other chunks distributed across all 500 docs
+                SCORE: ❌ Fails completely on global/aggregation questions
+
+                GRAPHRAG APPROACH:
+                Step 1: ENTITY EXTRACTION (done at ingestion time)
+                "Apple acquired… " → (Apple) -[ACQUIRED]→ (Company X)
+                "Tim Cook met Satya Nadella"→ (Tim Cook) -[MET]→ (Satya Nadella)
+                "Google partnered with…" → (Google) -[PARTNER_OF]→ (Company Y)
+
+                Step 2: BUILD KNOWLEDGE GRAPH (Neo4j / NetworkX)
+                Nodes: Entities (People, Companies, Concepts, Events)
+                Edges: Relationships (founded, acquired, competes, employs)
+
+                Step 3: COMMUNITY DETECTION (Leiden algorithm)
+                Automatically groups highly-connected nodes into clusters
+                "Apple Community" = Apple, iPhone, Tim Cook, Cupertino, iOS, …
+
+                Step 4: LLM SUMMARIZES EACH COMMUNITY
+                → Creates hierarchical summaries from fine-detail to high-level
+
+                QUERY TIME: Traverse graph → collect community summaries → LLM
+                SCORE: ✅ Answers global aggregation questions beautifully</div>
+        </div>
+        <div class="card reveal">
+            <h3>Comparison: When to Choose What</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Query Type</th>
+                            <th>Vector RAG</th>
+                            <th>GraphRAG</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>"What is the policy on X?"</td>
+                            <td>✅ Perfect</td>
+                            <td>❌ Overkill</td>
+                        </tr>
+                        <tr>
+                            <td>"Summarize all themes in 1000 docs"</td>
+                            <td>❌ Fails</td>
+                            <td>✅ Perfect</td>
+                        </tr>
+                        <tr>
+                            <td>"How is Person A connected to Company B?"</td>
+                            <td>❌ Maybe</td>
+                            <td>✅ Perfect</td>
+                        </tr>
+                        <tr>
+                            <td>"What product launched in January 2024?"</td>
+                            <td>✅ Good</td>
+                            <td>☑ Works</td>
+                        </tr>
+                        <tr>
+                            <td>Setup cost</td>
+                            <td>Low ($$$: API calls)</td>
+                            <td>Very High (LLM per paragraph for extraction)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="callout tip">
+                <div class="callout-title">💡 Production: Combine Both!</div>
+                <p>Microsoft's GraphRAG paper (2024) showed that combining Vector RAG (for local queries) + GraphRAG
+                    (for global queries) in a hybrid router gives the best overall performance. Route specific factoid
+                    questions to vector search, and global synthesis questions to the knowledge graph.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 13 - RAPTOR & COLBERT -->
+<section class="section" id="raptor">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 13</div>
+            <h2 class="section-title">RAPTOR & ColBERT — State-of-the-Art Retrieval</h2>
+            <p class="section-desc">Two cutting-edge techniques from academic research that dramatically improve
+                retrieval for complex, long-context documents.</p>
+        </div>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(245,158,11,.12);color:var(--orange)">🌳</div>
+            <h3>RAPTOR: Tree-Organized Retrieval</h3>
+            <p><strong>Recursive Abstractive Processing for Tree-Organized Retrieval</strong> solves the problem of
+                needing to answer questions that require understanding multiple layers of abstraction simultaneously.
+            </p>
+            <div class="diagram">STANDARD RAG — Flat chunks, no hierarchy:
+                [chunk 1][chunk 2][chunk 3]…[chunk 500] ← All equal, no structure
+
+                Problem: "What's the overall strategic direction of Chapter 7?"
+                → Need to read ALL of Chapter 7, not just one chunk!
+
+                RAPTOR — Hierarchical Tree Structure:
+                LEVEL 0 (Leaf): [chunk 1][chunk 2][chunk 3]…[chunk 500] (Raw chunks)
+                ↓ K-means clustering + LLM summarization
+                LEVEL 1: [Summary A][Summary B][Summary C]…[Summary 50]
+                ↓ Cluster again + LLM summarize summaries
+                LEVEL 2: [High-Level Summary 1][High-Level Summary 2]…[8]
+                ↓ One final summary
+                LEVEL 3 (Root): [Global Document Summary]
+
+                QUERY: Collapses tree — searches ALL levels simultaneously
+                → Specific question → finds exact leaf chunk ✅
+                → Broad question → finds Level 2 summary ✅
+                → Both at once! → Multi-level contextual answer ✅</div>
+        </div>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">⚡</div>
+            <h3>ColBERT: Late Interaction for Deep Matching</h3>
+            <p><strong>Contextualized Late Interaction over BERT</strong> is a retrieval model that achieves
+                cross-encoder precision at near bi-encoder speed.</p>
+            <div class="diagram">BI-ENCODER (Standard):
+                Query → [CLS] single vector
+                Doc → [CLS] single vector
+                Score = dot_product(q_cls, d_cls)
+                PROBLEM: All token information is compressed into ONE vector!
+                Much information is lost.
+
+                CROSS-ENCODER (Precise but slow):
+                [Query + Document] → single joint score
+                READS IT TOGETHER but must re-compute for every query/doc pair!
+
+                ColBERT (Best of both):
+                Query → [q₁, q₂, q₃, q₄, q₅] ← one vector PER token
+                Doc → [d₁, d₂, d₃, d₄, d₅] ← one vector PER token
+
+                Late Interaction Score = Σᵢ max_j(qᵢ · dⱼ)
+                → Each query token finds its best matching document token
+                → "MaxSim" operation — fine-grained matching
+                → Document vectors pre-computed at index time → FAST!
+                → Token-level interaction → HIGH PRECISION!</div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 14 - MULTIMODAL RAG -->
+<section class="section" id="multimodal">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 14</div>
+            <h2 class="section-title">Multi-Modal RAG — Beyond Text</h2>
+            <p class="section-desc">Real-world documents contain images, diagrams, tables, audio transcriptions.
+                Multi-Modal RAG extends retrieval to all data types.</p>
+        </div>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(236,72,153,.12);color:var(--pink)">🖼️</div>
+            <h3>Three Implementation Approaches</h3>
+            <div class="grid-3">
+                <div class="mini-card">
+                    <h4>Approach 1: Text Conversion</h4>
+                    <p>Use GPT-4V or Gemini to convert images to text descriptions. Embed the text description. Simplest
+                        to implement but loses some visual fidelity.</p>
+                    <div class="tag-row"><span class="tag tag-emerald">Easy</span></div>
+                </div>
+                <div class="mini-card">
+                    <h4>Approach 2: Multimodal Embeddings</h4>
+                    <p>Use CLIP (OpenAI) or similar to embed images and text into the same vector space. Query with
+                        text, retrieve images directly. Search across modalities!</p>
+                    <div class="tag-row"><span class="tag tag-blue">Medium</span></div>
+                </div>
+                <div class="mini-card">
+                    <h4>Approach 3: Raw Image Retrieval</h4>
+                    <p>Store image bytes + text chunks together. Retrieve both. Pass raw images + text to a multimodal
+                        LLM (GPT-4o, Gemini 1.5 Pro) that can see both.</p>
+                    <div class="tag-row"><span class="tag tag-orange">Advanced</span></div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ===================================================================
-     SECTION 6: RE-RANKING
-     =================================================================== -->
-<section class="section">
+<!-- CH 15 - EVALUATION -->
+<section class="section" id="evaluation">
     <div class="container">
-        <div class="section-header">
-            <div class="section-number">Chapter 06</div>
-            <h2 class="section-title">Re-ranking & Filtering</h2>
-            <p class="section-desc">Vector search is fast but coarse. Re-ranking is slow but incredibly accurate.
-                Combining them is production-grade RAG.</p>
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 15</div>
+            <h2 class="section-title">Evaluation with RAGAS — Measure Everything</h2>
+            <p class="section-desc">You cannot improve what you cannot measure. RAG evaluation is non-trivial because
+                answers are subjective — so we use LLMs as judges.</p>
         </div>
+        <div class="card reveal">
+            <div class="card-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">📏</div>
+            <h3>The 4 Core RAGAS Metrics</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>What It Measures</th>
+                            <th>What You Need</th>
+                            <th>Ideal Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Faithfulness</strong></td>
+                            <td>Are all generated facts directly supported by the retrieved context? (Hallucination
+                                detector)</td>
+                            <td>Generated answer + retrieved context</td>
+                            <td>1.0 (100%)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Answer Relevance</strong></td>
+                            <td>Did the generated answer actually address the user's question?</td>
+                            <td>Question + generated answer</td>
+                            <td>&gt; 0.85</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Context Precision</strong></td>
+                            <td>Were the USEFUL retrieved chunks ranked at the TOP? (Tests Re-Ranker)</td>
+                            <td>Question + retrieved context + ground truth</td>
+                            <td>&gt; 0.80</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Context Recall</strong></td>
+                            <td>Did retrieval find ALL information needed to answer? (Tests completeness)</td>
+                            <td>Question + retrieved context + ground truth answer</td>
+                            <td>&gt; 0.80</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Python —
+                        RAGAS evaluation</span>
+                </div>
+                <div class="code-body"><code><span class="c-kw">from</span> ragas <span class="c-kw">import</span> evaluate
+<span class="c-kw">from</span> ragas.metrics <span class="c-kw">import</span> (faithfulness, answer_relevancy,
+                              context_precision, context_recall)
+<span class="c-kw">from</span> datasets <span class="c-kw">import</span> Dataset
 
-        <!-- Cross Encoder -->
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-orange)">⚖️</div>
-            <h3>The Cross-Encoder Reranker</h3>
-            <p>Standard vector search uses a <strong>Bi-Encoder</strong> format (Embed Query → Embed Doc → Compute
-                vector distance). This is fast, but it doesn't allow the model to truly analyze the contextual
-                interaction between the query and the document.</p>
+<span class="c-cmt"># Your golden test dataset</span>
+data = {
+    <span class="c-str">"question"</span>:   [<span class="c-str">"What is the vacation policy?"</span>],
+    <span class="c-str">"answer"</span>:     [<span class="c-str">"Employees get 15 PTO days per year."</span>],  <span class="c-cmt"># LLM generated</span>
+    <span class="c-str">"contexts"</span>:   [[<span class="c-str">"Chunk 1 text..."</span>, <span class="c-str">"Chunk 2 text..."</span>]],  <span class="c-cmt"># retrieved</span>
+    <span class="c-str">"ground_truth"</span>: [<span class="c-str">"The company provides 15 vacation days annually."</span>]
+}
 
-            <div class="diagram">
-                The Two-Stage Pipeline:
-
-                STAGE 1: FAST RETRIEVAL
-                User Query ─▶ Vector DB (Bi-Encoder)
-                Return Top 20 coarse results (cheap, fast, good recall)
-
-                STAGE 2: PRECISION RE-RANKING
-                Feed exactly [Query + Doc N] into a Cross-Encoder Model.
-                The Cross-Encoder reads them TOGETHER and outputs a relevance score (0.0 to 1.0).
-                Re-score all 20 results.
-                Take the Top 3 to give to the LLM.</div>
-
-            <p><strong>Result:</strong> Cross-encoders drastically reduce hallucinations because they filter out chunks
-                that are mathematically similar but contextually irrelevant.</p>
-
-            <div class="info-box tip">
-                <div class="info-box-title">💡 Standard Tech Stack</div>
-                <p><strong>Retrieval:</strong> all-MiniLM-L6-v2 (or OpenAI Ada 002) in ChromaDB.</p>
-                <p><strong>Re-ranking:</strong> BAAI/bge-reranker-base (or Cohere Rerank API). This single addition
-                    typically boosts RAG accuracy by 10-20%.</p>
+result = <span class="c-fn">evaluate</span>(
+    <span class="c-cls">Dataset</span>.<span class="c-fn">from_dict</span>(data),
+    metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
+)
+<span class="c-fn">print</span>(result)
+<span class="c-cmt"># {'faithfulness': 0.95, 'answer_relevancy': 0.88, ...}</span></code></div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ===================================================================
-     SECTION 7: ADVANCED RAG ARCHITECTURES
-     =================================================================== -->
-<section class="section">
+<!-- CH 16 - PRODUCTION -->
+<section class="section" id="production">
     <div class="container">
-        <div class="section-header">
-            <div class="section-number">Chapter 07</div>
-            <h2 class="section-title">Advanced Agentic RAG</h2>
-            <p class="section-desc">The future of RAG isn't a straight pipeline. It's iterative, evaluative, and
-                agentic.</p>
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 16</div>
+            <h2 class="section-title">Production & Deployment</h2>
+            <p class="section-desc">Building a working demo is 20% of the job. Making it production-ready is the other
+                80%.</p>
         </div>
-
-        <!-- Self-RAG & CRAG -->
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald)">🤖</div>
-            <h3>Self-RAG (Self-Reflective RAG)</h3>
-            <p>Standard RAG retrieves documents blindly and assumes they are good. Self-RAG uses an LLM as an evaluator
-                at every step of the pipeline.</p>
-
+        <div class="card reveal">
+            <h3>Production Checklist</h3>
             <div class="grid-2">
                 <div class="mini-card">
-                    <h4>1. Retrieve or Not?</h4>
-                    <p>The LLM checks the query. "Does this need retrieval?" If the user says "Hello", it skips the DB.
-                        If they ask a fact, it retrieves.</p>
+                    <h4>💾 Caching</h4>
+                    <p>Cache embeddings for repeated queries using Redis or a semantic cache (GPTCache). If 30% of
+                        queries are duplicates, you eliminate 30% of API costs immediately.</p>
                 </div>
                 <div class="mini-card">
-                    <h4>2. Context Relevance</h4>
-                    <p>After retrieval, the LLM reads chunks and grades them. "Is Chunk A actually relevant to the
-                        question?" Discard irrelevant chunks.</p>
+                    <h4>🛡️ Guardrails</h4>
+                    <p>Input validation (detect prompt injection attempts), output validation (block harmful/PII
+                        content), and topic restriction (only answer questions within your domain).</p>
                 </div>
                 <div class="mini-card">
-                    <h4>3. Hallucination Check</h4>
-                    <p>After generating the final answer, a second LLM checks: "Is every fact in this generated answer
-                        supported by the retrieved chunks?"</p>
+                    <h4>📊 Monitoring</h4>
+                    <p>Track: latency per request, retrieval time vs. generation time, RAGAS metrics per day, token
+                        usage and cost per query, failure rates. Use LangSmith or Arize Phoenix.</p>
                 </div>
                 <div class="mini-card">
-                    <h4>4. Web Search Fallback</h4>
-                    <p>If all chunks are irrelevant (CRAG methodology), the Agent triggers a web search API instead to
-                        answer the question.</p>
+                    <h4>⚡ Scaling</h4>
+                    <p>Move from ChromaDB to Pinecone/Weaviate for million+ vectors. Add async processing for ingestion.
+                        Use FastAPI + Uvicorn + async for concurrent query handling.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>💡 Cost Optimization</h4>
+                    <p>Use a cheap, fast model (GPT-4o-mini, Groq Llama3) for routing and classification. Reserve
+                        expensive models (GPT-4o) only for complex generation. Token budgeting per query.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>🚀 Deployment</h4>
+                    <p>FastAPI backend + Streamlit or React frontend. Deploy to Railway, Render, or AWS Lambda. Netlify
+                        for static frontends. Docker for reproducibility. Use GitHub Actions for CI/CD.</p>
                 </div>
             </div>
-        </div>
-
-        <!-- GraphRAG -->
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">🕸️</div>
-            <h3>GraphRAG (Knowledge Graphs)</h3>
-            <p>Vector RAG is terrible at answering "global" questions about an entire dataset, like <em>"What are the
-                    main themes in this 1000-page book?"</em> Vector DBs only return isolated chunks.</p>
-            <p><strong>GraphRAG</strong> solves this by using an LLM during the ingestion phase to extract
-                <strong>Entities (People, Places, Concepts)</strong> and <strong>Relationships</strong> between them. It
-                builds a Knowledge Graph (like Neo4j) and clusters communities.
-            </p>
-
-            <div class="diagram">
-                Text: "Steve Jobs founded Apple with Steve Wozniak."
-
-                LLM Extraction:
-                (Steve Jobs) ───[FOUNDER_OF]──▶ (Apple)
-                (Steve Wozniak) ─[FOUNDER_OF]──▶ (Apple)
-
-                When the user queries, the system traverses the graph structure, allowing it to aggregate massive
-                amounts of connected information instantly. You can combine Graph Search with Vector Search.</div>
         </div>
     </div>
 </section>
 
-<!-- ===================================================================
-     SECTION 8: EVALUATION & Metrics
-     =================================================================== -->
-<section class="section">
+<!-- OUR CODE REFERENCE -->
+<section class="section" id="coderef">
     <div class="container">
-        <div class="section-header">
-            <div class="section-number">Chapter 08</div>
-            <h2 class="section-title">Evaluation (RAGAS)</h2>
-            <p class="section-desc">You cannot improve what you cannot measure. RAG requires an LLM-as-a-Judge pipeline.
-            </p>
+        <div class="section-header reveal">
+            <div class="section-chapter">🏆 Our Implementation</div>
+            <h2 class="section-title">Mapping Concepts to Our Code</h2>
+            <p class="section-desc">Every concept you've learned maps directly to a file in this repository. Here's the
+                legend.</p>
         </div>
-
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(20,184,166,0.12);color:var(--accent-teal)">📏</div>
-            <h3>The 4 Pillars of RAG Evaluation</h3>
-            <p>Using frameworks like <strong>RAGAS (Retrieval Augmented Generation Assessment)</strong> or
-                <strong>TruLens</strong>, you pass a golden dataset (Query + Context + Expected Answer) to an LLM
-                evaluator to score your system automatically.
-            </p>
-
-            <table class="comparison-table">
+        <div class="table-wrap reveal">
+            <table>
                 <thead>
                     <tr>
-                        <th>Metric</th>
-                        <th>Where it tests</th>
-                        <th>The Question It Asks</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Faithfulness</strong></td>
-                        <td>Generation Quality</td>
-                        <td>Are all facts in the final answer directly inferable from the given context? (Tests for
-                            Hallucination).</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Answer Relevance</strong></td>
-                        <td>Generation Quality</td>
-                        <td>Did the generated answer actually address the user's specific question?</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Context Precision</strong></td>
-                        <td>Retrieval Quality</td>
-                        <td>Out of the chunks retrieved, were the <em>useful</em> ones ranked at the very top? (Tests
-                            the Vector Search/Reranker).</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Context Recall</strong></td>
-                        <td>Retrieval Quality</td>
-                        <td>Did the retrieval system find ALL the information required to answer the question? (Requires
-                            a Ground Truth answer to test against).</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="info-box interview">
-                <div class="info-box-title">🎤 Interview Question</div>
-                <p><strong>"My RAG system accurately retrieves documents, but occasionally hallucinates facts not in the
-                        documents. How do I fix this?"</strong></p>
-                <p><strong>Answer:</strong> First, ensure your prompt is strict (e.g., "Answer ONLY using the provided
-                    text. If unsure, say 'I don't know'"). Second, set Temperature to 0.0 to eliminate stochasticity.
-                    Third, implement a self-reflection post-processing loop where an LLM checks the output against the
-                    context (Self-RAG) before sending it to the user. Finally, check if the retrieved chunks are too
-                    small and lack the surrounding context needed to make a declarative statement.</p>
-            </div>
-
-        </div>
-    </div>
-</section>
-
-<!-- ===================================================================
-     SECTION 9: REAL-WORLD IMPLEMENTATION
-     =================================================================== -->
-<section class="section" id="implementation">
-    <div class="container">
-        <div class="section-header">
-            <div class="section-number">Chapter 09</div>
-            <h2 class="section-title">Real-World Implementation</h2>
-            <p class="section-desc">How you can build exactly what we just learned from scratch. We have built a fully
-                functional RAG pipeline in this repository.</p>
-        </div>
-
-        <div class="concept-card">
-            <div class="concept-icon" style="background:rgba(236,72,153,0.12);color:#ec4899">💻</div>
-            <h3>Our Code Architecture</h3>
-            <p>If you explore the root of this GitHub repository, you will find a complete RAG system broken down into
-                clean, understandable scripts. Here is what each script does:</p>
-
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>File Name</th>
-                        <th>Concept Applied</th>
-                        <th>What It Does</th>
+                        <th>File</th>
+                        <th>Chapter(s) Applied</th>
+                        <th>Key Concepts Inside</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><strong>data_loader.py</strong></td>
-                        <td>Data Ingestion</td>
-                        <td>Reads raw PDF and TXT files, stripping formatting to extract raw text (the foundation).</td>
+                        <td>Ch 01-02</td>
+                        <td>PDF/TXT text extraction via PyPDF2, text cleaning, metadata extraction</td>
                     </tr>
                     <tr>
                         <td><strong>chunker.py</strong></td>
-                        <td>Chunking Strategy</td>
-                        <td>Takes the huge text and uses <strong>Recursive Character Splitting</strong> with overlap to
-                            create 1000-character chunks.</td>
+                        <td>Ch 03</td>
+                        <td>RecursiveCharacterTextSplitter, configurable chunk_size + overlap, fixed/recursive/semantic
+                            modes</td>
                     </tr>
                     <tr>
                         <td><strong>embedding_generator.py</strong></td>
-                        <td>Embeddings</td>
-                        <td>Uses the HuggingFace <code>all-MiniLM-L6-v2</code> model to convert every chunk of text into
-                            a high-dimensional vector.</td>
+                        <td>Ch 02</td>
+                        <td>SentenceTransformer (MiniLM), batch embedding, cosine similarity demonstration</td>
                     </tr>
                     <tr>
                         <td><strong>vector_db.py</strong></td>
-                        <td>Vector Database</td>
-                        <td>Connects to <strong>ChromaDB</strong>. Stores all the vectors and performs the mathematical
-                            Cosine Similarity search when a user asks a question.</td>
+                        <td>Ch 04</td>
+                        <td>ChromaDB PersistentClient, HNSW index, cosine similarity search, metadata filtering</td>
                     </tr>
                     <tr>
                         <td><strong>rag_pipeline.py</strong></td>
-                        <td>Generation</td>
-                        <td>The core brain. It takes the text found by the database, builds a strict prompt, and sends
-                            it to the <strong>Groq LLM (Llama-3)</strong> API.</td>
+                        <td>Ch 05, 10</td>
+                        <td>Full orchestration, strict system prompt, Groq API integration, context injection</td>
+                    </tr>
+                    <tr>
+                        <td><strong>app.py</strong></td>
+                        <td>Ch 16</td>
+                        <td>FastAPI REST endpoints, async handling, CORS, request validation</td>
                     </tr>
                     <tr>
                         <td><strong>streamlit_app.py</strong></td>
-                        <td>Deployment</td>
-                        <td>Wraps the entire system into a beautiful chat interface using Streamlit.</td>
+                        <td>Ch 16</td>
+                        <td>Chat interface, session state, streaming responses, document upload</td>
+                    </tr>
+                    <tr>
+                        <td><strong>test_pipeline.py</strong></td>
+                        <td>All</td>
+                        <td>End-to-end pipeline test — run this to see everything in action!</td>
                     </tr>
                 </tbody>
             </table>
-
-            <div class="info-box tip">
-                <div class="info-box-title">💡 Run it yourself!</div>
-                <p>To run the application locally, install the requirements with <code>./setup.sh</code>, add your Groq
-                    API key to the <code>.env</code> file, and run <code>python test_pipeline.py</code> in your terminal
-                    to see the AI generate hallucination-free answers from your documents!</p>
-            </div>
-            <div class="info-box interview">
-                <div class="info-box-title">🔗 Explore The Code</div>
-                <p>All the code exists in the root folder of this GitHub repository. You will see how everything flows
-                    seamlessly from <code>data_loader.py</code> all the way to <code>rag_pipeline.py</code>.</p>
-            </div>
+        </div>
+        <div class="callout info reveal">
+            <div class="callout-title">▶️ Run It Now!</div>
+            <p><strong>Step 1:</strong> <code>./setup.sh</code> — install all dependencies<br>
+                <strong>Step 2:</strong> Add your Groq API key to <code>.env</code><br>
+                <strong>Step 3:</strong> <code>python test_pipeline.py</code> — watch the entire Ch 01-10 pipeline
+                execute in your terminal<br>
+                <strong>Step 4:</strong> <code>streamlit run streamlit_app.py</code> — chat with your own documents at
+                <a href="http://localhost:8501" style="color:var(--teal)">localhost:8501</a>
+            </p>
         </div>
     </div>
 </section>
 
-<!-- ========== FOOTER ========== -->
-<div class="footer">
-    <p style="margin-bottom:8px;">Built with ❤️ for mastering Generative AI</p>
-    <p style="font-size:0.8rem;">RAG: Zero to Hero — Comprehensive Production and Advanced Guides</p>
-    <p style="margin-top:20px;"><a href="../START_HERE.md" style="color:var(--accent-teal);text-decoration:none;">📋
-            Back to Local Project Code</a> | <a href="../LLM_Foundations/index.html"
-            style="color:var(--accent-blue);text-decoration:none;">📘 View LLM Foundations</a></p>
-</div>
+<!-- INTERVIEW PREP -->
+<section class="section" id="interview">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">★ Interview Prep</div>
+            <h2 class="section-title">50 Must-Know RAG Interview Questions</h2>
+            <p class="section-desc">Click any question to reveal the model answer. These are pulled from real senior
+                ML/AI engineering interviews at Google, Meta, Microsoft, and top AI startups.</p>
+        </div>
+
+        <!-- Quiz Questions -->
+        <div class="quiz-card reveal" id="q1">
+            <div class="quiz-q">Q1: What is the difference between RAG and Fine-Tuning? When would you choose each?
+            </div>
+            <div class="quiz-options">
+                <button class="quiz-opt" data-q="q1" data-correct="false" data-idx="0"><span
+                        class="quiz-opt-letter">A</span> They are the same thing — both inject new information into an
+                    LLM.</button>
+                <button class="quiz-opt" data-q="q1" data-correct="false" data-idx="1"><span
+                        class="quiz-opt-letter">B</span> Fine-Tuning is always better because it learns the facts
+                    permanently.</button>
+                <button class="quiz-opt" data-q="q1" data-correct="true" data-idx="2"><span
+                        class="quiz-opt-letter">C</span> RAG injects facts at inference time (dynamic, updatable).
+                    Fine-Tuning teaches style/behavior at training time. Use RAG for facts, Fine-Tune for domain
+                    voice.</button>
+                <button class="quiz-opt" data-q="q1" data-correct="false" data-idx="3"><span
+                        class="quiz-opt-letter">D</span> RAG is only for text, Fine-Tuning is for structured
+                    data.</button>
+            </div>
+            <div class="quiz-feedback" id="q1-fb"></div>
+        </div>
+
+        <div class="quiz-card reveal" id="q2">
+            <div class="quiz-q">Q2: What are the three key failure modes of Naive RAG?</div>
+            <div class="quiz-options">
+                <button class="quiz-opt" data-q="q2" data-correct="false" data-idx="0"><span
+                        class="quiz-opt-letter">A</span> Too slow, too expensive, requires GPU.</button>
+                <button class="quiz-opt" data-q="q2" data-correct="true" data-idx="1"><span
+                        class="quiz-opt-letter">B</span> (1) Bad query phrasing → bad retrieval. (2) Multi-hop reasoning
+                    needs across multiple chunks. (3) Exact keyword queries (product codes) miss via vector
+                    search.</button>
+                <button class="quiz-opt" data-q="q2" data-correct="false" data-idx="2"><span
+                        class="quiz-opt-letter">C</span> Model hallucinations only happen when no context is
+                    provided.</button>
+                <button class="quiz-opt" data-q="q2" data-correct="false" data-idx="3"><span
+                        class="quiz-opt-letter">D</span> RAG always works perfectly if you use GPT-4.</button>
+            </div>
+            <div class="quiz-feedback" id="q2-fb"></div>
+        </div>
+
+        <div class="quiz-card reveal" id="q3">
+            <div class="quiz-q">Q3: Explain how HyDE (Hypothetical Document Embeddings) works and why it improves
+                retrieval.</div>
+            <div class="quiz-options">
+                <button class="quiz-opt" data-q="q3" data-correct="false" data-idx="0"><span
+                        class="quiz-opt-letter">A</span> HyDE generates a fake question from the document to improve
+                    indexing.</button>
+                <button class="quiz-opt" data-q="q3" data-correct="false" data-idx="1"><span
+                        class="quiz-opt-letter">B</span> HyDE compresses large documents into smaller hypothetical
+                    summaries.</button>
+                <button class="quiz-opt" data-q="q3" data-correct="true" data-idx="2"><span
+                        class="quiz-opt-letter">C</span> HyDE generates a hypothetical ANSWER to the query first, then
+                    embeds and searches using the answer vector. This bridges the semantic gap between question-space
+                    and answer-space in the vector embedding.</button>
+                <button class="quiz-opt" data-q="q3" data-correct="false" data-idx="3"><span
+                        class="quiz-opt-letter">D</span> HyDE uses a hypothetical database to simulate retrieval before
+                    real queries are made.</button>
+            </div>
+            <div class="quiz-feedback" id="q3-fb"></div>
+        </div>
+
+        <div class="callout inter reveal">
+            <div class="callout-title">★ More Interview Questions to Study</div>
+            <p>
+                <strong>Q4:</strong> What is Reciprocal Rank Fusion and when is it used?<br>
+                <strong>Q5:</strong> Explain the Parent-Child chunk retrieval pattern and its advantages.<br>
+                <strong>Q6:</strong> How does HNSW (Hierarchical Navigable Small World) work for ANN search?<br>
+                <strong>Q7:</strong> What is the difference between Faithfulness and Answer Relevance in RAGAS?<br>
+                <strong>Q8:</strong> How would you detect and prevent prompt injection in a RAG system?<br>
+                <strong>Q9:</strong> When would you use GraphRAG instead of Vector RAG?<br>
+                <strong>Q10:</strong> Describe the Self-RAG architecture and its key decision tokens.<br>
+                <strong>Q11:</strong> What is semantic chunking and when is the extra computation cost worth it?<br>
+                <strong>Q12:</strong> Explain ColBERT's "late interaction" mechanism vs standard bi-encoders.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <p style="font-size:1.05rem;font-weight:700;margin-bottom:8px;">🚀 You've completed RAG: Zero to Hero</p>
+    <p>Built for serious learners. From zero to production-grade in 16 chapters.</p>
+    <p style="margin-top:20px;">
+        <a href="https://github.com/Sharjeel-Saleem-06/Learn_RAG_from_Basics" target="_blank">📂 View GitHub Repo</a>
+        &nbsp;·&nbsp;
+        <a href="../START_HERE.md">📋 Project Setup Guide</a>
+    </p>
+</footer>
