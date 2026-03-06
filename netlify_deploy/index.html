@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG: Zero to Hero — The Ultimate Guide</title>
+    <meta name="description"
+        content="Master Retrieval-Augmented Generation (RAG) from scratch. Learn data ingestion, vector databases, chunking, retrieval techniques, and advanced patterns.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- ========== HERO ========== -->
+    <section class="hero">
+        <div class="hero-content">
+            <span class="badge badge-emerald">Mastery Path</span>
+            <h1>RAG: Zero to Hero</h1>
+            <p class="subtitle">From naive implementations to production-grade architectures. Learn how to give Large
+                Language Models a flawless memory to answer questions using your private data.</p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
+                <span class="badge badge-teal">📥 Ingestion</span>
+                <span class="badge badge-purple">✂️ Chunking</span>
+                <span class="badge badge-blue">🔢 Embeddings</span>
+                <span class="badge badge-emerald">🗄️ Vector DBs</span>
+                <span class="badge badge-orange">🔍 Retrieval</span>
+                <span class="badge badge-teal">✍️ Generation</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== NAVIGATION ========== -->
+    <nav class="nav-bar" id="navbar">
+        <div class="nav-inner">
+            <a href="#whatisrag" class="nav-link">🤔 What is RAG?</a>
+            <a href="#architecture" class="nav-link">🏗️ The Architecture</a>
+            <a href="#ingestion" class="nav-link">📥 Ingestion & Chunking</a>
+            <a href="#vectordb" class="nav-link">🗄️ Vector Databases</a>
+            <a href="#retrieval" class="nav-link">🔍 Retrieval Strategies</a>
+            <a href="#reranking" class="nav-link">⭐ Re-ranking</a>
+            <a href="#advanced" class="nav-link">🚀 Advanced RAG</a>
+            <a href="#evaluation" class="nav-link">📏 Evaluation</a>
+        </div>
+    </nav>
+
+    <!-- ===================================================================
+     SECTION 1: WHAT IS RAG
+     =================================================================== -->
+    <section class="section" id="whatisrag">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-number">Chapter 01</div>
+                <h2 class="section-title">What is RAG?</h2>
+                <p class="section-desc">LLMs are brilliant, but they have a fatal flaw: they only know what they were
+                    trained on, and they make things up when they don't know.</p>
+            </div>
+
+            <!-- The Problem -->
+            <div class="concept-card">
+                <div class="concept-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-orange)">⚠️</div>
+                <h3>The Core Problem with LLMs</h3>
+                <p>Imagine a brilliant professor locked in a room in 2023. They know everything up to that date, but:
+                </p>
+                <ul>
+                    <li>They <strong>cannot access the internet</strong> or your private company documents.</li>
+                    <li>They suffer from <strong>Hallucination</strong>: If you ask them a highly specific question they
+                        don't know, they will confidently invent a plausible-sounding lie.</li>
+                    <li>Training/Fine-tuning them on new data is <strong>too slow, too expensive, and doesn't fully stop
+                            hallucinations</strong>.</li>
+                </ul>
+            </div>
+
+            <!-- The Solution -->
+            <div class="concept-card">
+                <div class="concept-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald)">💡</div>
+                <h3>The Solution: Open-Book Exams</h3>
+                <p><strong>RAG (Retrieval-Augmented Generation)</strong> turns the closed-book exam into an open-book
+                    exam. Instead of asking the LLM to remember facts, we <strong>retrieve the exact facts</strong> from
+                    a database, hand them to the LLM, and say: <em>"Read this, and answer the question based ONLY on
+                        this text."</em></p>
+
+                <div class="info-box tip">
+                    <div class="info-box-title">💡 Why not just use Fine-Tuning?</div>
+                    <p>A common beginner mistake is thinking: <em>"I'll just fine-tune an LLM on my PDFs!"</em>
+                        Fine-tuning is for teaching an LLM <strong>how to speak</strong> (style, format, domain
+                        language). It is TERRIBLE at teaching an LLM <strong>new facts</strong>. RAG is for facts.
+                        Fine-tuning is for form.</p>
+                    <p><strong>Bonus:</strong> With RAG, if a document changes, you just update the database. If you
+                        fine-tuned, you'd have to retrain the model!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================
+     SECTION 2: NAIVE RAG ARCHITECTURE
+     =================================================================== -->
+    <section class="section" id="architecture">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-number">Chapter 02</div>
+                <h2 class="section-title">The Naive RAG Architecture</h2>
+                <p class="section-desc">The standard RAG pipeline is divided into two distinct phases: <strong>Data
+                        Ingestion</strong> (done once) and <strong>Querying</strong> (done per user request).</p>
+            </div>
+
+            <div class="concept-card">
+                <div class="concept-icon" style="background:rgba(20,184,166,0.12);color:var(--accent-teal)">🏗️</div>
+                <h3>The Pipeline Visualized</h3>
+
+                <div class="diagram" style="text-align:center;">
+                    PHASE 1: INGESTION (Data Prep)
+                    ──────────────────────────────
+                    Private Docs ─▶ Load Text ─▶ Split into Chunks ─▶ Embed to Vectors ─▶ Vector DB
+                    (PDF, txt) (PyPDF) (500 chars) (OpenAI/Chroma) (Storage)
+
+
+                    PHASE 2: QUERYING (Runtime)
+                    ───────────────────────────
+                    User Question ─▶ Embed Question ─▶ Search Vector DB ─▶ Top 3 Chunks Retrieved
+
+                    ┌─────────────────────────────────────────────────────────┐
+                    │ PROMPT CONSTRUCTION │
+                    │ System: "Answer based ONLY on context." │
+                    │ Context: [Insert Top 3 Chunks Here] │
+                    │ Question: [Insert User Question Here] │
+                    └─────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+                    LLM Generation
+                    │
+                    ▼
+                    "According to the documents..."</div>
+
+                <p style="margin-top: 20px;">Think of this exactly like exactly how we built
+                    <code>rag_pipeline.py</code> in our application. It's an orchestrator that glues these steps
+                    together.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================
+     SECTION 3: INGESTION & CHUNKING
+     =================================================================== -->
+    <section class="section" id="ingestion">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-number">Chapter 03</div>
+                <h2 class="section-title">Data Ingestion & Chunking</h2>
+                <p class="section-desc">Garbage in, garbage out. If your chunking strategy is bad, your RAG system will
+                    fail no matter how powerful the LLM is.</p>
+            </div>
+
+            <div class="concept-card">
+                <div class="concept-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">✂️</div>
+                <h3>Why do we Chunk?</h3>
+                <p>We cannot feed a 500-page PDF into an embedding model. Embedding models have small token limits
+                    (e.g., 512 or 8192 tokens max). Furthermore, long text dilutes the semantic meaning of the vector. A
+                    vector representing a whole book is useless for searching for a specific sentence.</p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Strategy</th>
+                            <th>How it works</th>
+                            <th>Pros / Cons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Fixed Character Split</strong></td>
+                            <td>Splits strictly by length (e.g., every 1000 chars) with some overlap.</td>
+                            <td><strong>Pro:</strong> Easy to code.<br><strong>Con:</strong> Can cut sentences or words
+                                in half, destroying meaning.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Recursive Character Split</strong></td>
+                            <td>Tries to split by double-newline, then newline, then space, then character.</td>
+                            <td><strong>Pro:</strong> Respects paragraphs and sentences.<br><strong>Con:</strong>
+                                Standard baseline, but blind to actual document structure.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Semantic Chunking</strong></td>
+                            <td>Embeds individual sentences. Groups adjacent sentences that have high mathematical
+                                similarity.</td>
+                            <td><strong>Pro:</strong> Keeps cohesive thoughts together. Highly
+                                accurate.<br><strong>Con:</strong> Computationally expensive (requires embedding every
+                                sentence first).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Logical/Markdown Chunking</strong></td>
+                            <td>Splits based on markdown headers (#, ##) or HTML tags.</td>
+                            <td><strong>Pro:</strong> Respects the author's intended structure.<br><strong>Con:</strong>
+                                Source docs must be well-formatted.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box key">
+                    <div class="info-box-title">🔑 The Overlap Window</div>
+                    <p>Always include chunk <strong>overlap</strong> (e.g., chunk size 1000, overlap 200). If a crucial
+                        sentence spans the boundary of two chunks, splitting it cleanly breaks the context. Overlap
+                        ensures context bleeds over the edges so meaning isn't lost.</p>
+                </div>
+
+                <div class="code-block">
+                    <span class="code-label">Python / LangChain Style</span>
+                    <code><span class="keyword">def</span> <span class="function">recursive_split</span>(text, chunk_size=<span class="number">1000</span>, overlap=<span class="number">200</span>):
+    <span class="comment"># 1. Split on \n\n (Paragraphs)</span>
+    <span class="comment"># 2. If still too big, split on \n (Lines)</span>
+    <span class="comment"># 3. If still too big, split on spaces (Words)</span>
+    <span class="comment"># 4. Attach overlap to the end of chunk N and start of chunk N+1</span>
+    <span class="keyword">pass</span></code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================
+     SECTION 4: VECTOR DATABASES
+     =================================================================== -->
+    <section class="section" id="vectordb">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-number">Chapter 04</div>
+                <h2 class="section-title">Vector Databases (ChromaDB)</h2>
+                <p class="section-desc">Where embeddings live. Unlike SQL databases that look for exact matches, Vector
+                    DBs search for "concepts that are mathematically close."</p>
+            </div>
+
+            <div class="concept-card">
+                <div class="concept-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue)">🗄️</div>
+                <h3>How Vector Search Works (ANN)</h3>
+                <p>If you have millions of documents, comparing your query vector to <em>every single document
+                        vector</em> (k-Nearest Neighbors / Exact Search) is too slow.</p>
+                <p>Vector databases use <strong>Approximate Nearest Neighbors (ANN)</strong>. They cluster vectors using
+                    algorithms like <strong>HNSW (Hierarchical Navigable Small World)</strong>, which builds a
+                    multi-layered graph. It drops onto the top layer, finds the closest cluster, drops to the next
+                    layer, and zooms in on the exact neighborhood almost instantly (logarithmic time).</p>
+
+                <div class="grid-2">
+                    <div class="mini-card">
+                        <h4>ChromaDB</h4>
+                        <p>Local, embedded, runs in memory or SQLite. What we use in our project. Perfect for
+                            prototyping and small-to-medium datasets.</p>
+                    </div>
+                    <div class="mini-card">
+                        <h4>Pinecone / Weaviate / Milvus</h4>
+                        <p>Managed, cloud-scale vector databases. Used in production when you have billions of vectors
+                            and need high concurrency.</p>
+                    </div>
+                    <div class="mini-card">
+                        <h4>pgvector (PostgreSQL)</h4>
+                        <p>An extension for Postgres. Amazing if you already have a Postgres DB and want to combine
+                            relational queries with vector search.</p>
+                    </div>
+                </div>
+
+                <div class="info-box interview">
+                    <div class="info-box-title">🎤 Interview Question</div>
+                    <p><strong>"How does Hybrid Search work in DBs like Weaviate or Pinecone?"</strong></p>
+                    <p><strong>Answer:</strong> Vector search (dense retrieval) is great for semantic meaning ("What is
+                        AI?"), but terrible at exact keyword matches ("Find the term 'XYZ-123'"). Hybrid Search combines
+                        <strong>Vector Search (Cosine Similarity)</strong> with traditional <strong>Keyword Search (BM25
+                            algorithm)</strong>. It runs both searches, normalizes the scores using a technique like
+                        Reciprocal Rank Fusion (RRF), and returns the combined best results. This is the industry
+                        standard for production RAG.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Link to Part 2 -->
+    <div id="retrieval"></div>
+    <div id="reranking"></div>
+    <div id="advanced"></div>
+    <div id="evaluation"></div>
+
+    <!-- Content continues in advanced.html, loaded via JS -->
+    <div id="content-part2"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
