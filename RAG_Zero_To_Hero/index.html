@@ -24,6 +24,8 @@
 
         <span class="sidebar-phase">🟢 Phase 1 · Beginner</span>
         <a href="#intro" class="sidebar-link active"><span class="ch-num">00</span>Introduction & WHY</a>
+        <a href="#ragworkflow" class="sidebar-link"><span class="ch-num">🗺</span>RAG Workflow Map</a>
+        <a href="#sysdesign" class="sidebar-link"><span class="ch-num">🏗</span>System Design Guide</a>
         <a href="#howrag" class="sidebar-link"><span class="ch-num">01</span>What Is RAG?</a>
         <a href="#tokenembed" class="sidebar-link"><span class="ch-num">02</span>Tokens & Embeddings</a>
         <a href="#chunking" class="sidebar-link"><span class="ch-num">03</span>Chunking Strategies</a>
@@ -115,7 +117,8 @@
                                 internal protocols.</strong></li>
                         <li>When they don't know something, they don't say "I don't know." They <strong>confidently
                                 fabricate a plausible-sounding lie.</strong> This is called
-                            <strong>Hallucination</strong>.</li>
+                            <strong>Hallucination</strong>.
+                        </li>
                     </ul>
                     <div class="callout warn">
                         <div class="callout-title">⚠️ Hallucination is not a Bug — it's a Feature</div>
@@ -132,7 +135,8 @@
                         solves this elegantly.</p>
                     <p style="margin-top:12px;">Instead of asking the model to remember facts from training, we
                         <strong>retrieve the exact source documents</strong> at query time and inject them directly into
-                        the LLM's prompt:</p>
+                        the LLM's prompt:
+                    </p>
                     <div class="diagram">WITHOUT RAG:
                         User: "What is our company's refund policy?"
                         LLM: "Your refund policy is 30 days." ← HALLUCINATED. The LLM guessed.
@@ -156,7 +160,8 @@
                         <p><strong>Fine-Tuning</strong> teaches the model <em>how to speak</em> in a certain style or
                             domain language. It's terrible at injecting new factual knowledge reliably.
                             <strong>RAG</strong> is for injecting live, dynamic facts at inference time. They are
-                            complementary, not competing.</p>
+                            complementary, not competing.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -177,7 +182,8 @@
                     <h3>Tokenization: Breaking Text Into Pieces</h3>
                     <p>An LLM does not read letter-by-letter or word-by-word. It reads <strong>tokens</strong> —
                         sub-word units that balance vocabulary size with efficiency. The most common algorithm is
-                        <strong>Byte Pair Encoding (BPE)</strong>.</p>
+                        <strong>Byte Pair Encoding (BPE)</strong>.
+                    </p>
                     <div class="code-block">
                         <div class="code-header">
                             <div class="code-dots"><span></span><span></span><span></span></div><span
@@ -211,7 +217,8 @@ tokens = enc.<span class="c-fn">encode</span>(text)
                     <h3>Embeddings: Giving Text a Location in Space</h3>
                     <p>An <strong>embedding</strong> is a list of floating-point numbers (a vector) that represents the
                         <em>meaning</em> of a piece of text. The magic: similar meanings map to similar vectors,
-                        regardless of the exact words used.</p>
+                        regardless of the exact words used.
+                    </p>
                     <div class="diagram">TEXT MEANING VECTOR (simplified to 3D for illustration)
                         ─────────────────────────────────────────────────
                         "dog" → [0.9, 0.1, 0.2]
@@ -535,6 +542,331 @@ results = collection.<span class="c-fn">query</span>(
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- ════════════ CHAPTER 00-B: RAG COMPLETE WORKFLOW VISUAL ════════════ -->
+        <section class="section" id="ragworkflow">
+            <div class="container">
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 00-B</div>
+                    <h2 class="section-title">The Complete RAG Workflow — See it All at Once</h2>
+                    <p class="section-desc">Before we go deep, see the entire picture. Every box below is a chapter in
+                        this guide. This is your map.</p>
+                </div>
+
+                <!-- Visual Pipeline (Ingestion) -->
+                <div class="card reveal">
+                    <h3>🔄 Pipeline 1: Ingestion (One-Time Setup)</h3>
+                    <p style="margin-bottom:18px;color:var(--text-2);font-size:0.92rem">You run this
+                        <strong>once</strong> for your dataset, or whenever data changes. It prepares knowledge for the
+                        AI.
+                    </p>
+                    <div class="workflow-pipe">
+                        <div class="workflow-node ingestion">
+                            <span class="wf-icon">📄</span>
+                            <div class="wf-label">Load Data</div>
+                            <div class="wf-sub">PDF, TXT, Web, Notion, DB</div>
+                        </div>
+                        <div class="workflow-node chunking">
+                            <span class="wf-icon">✂️</span>
+                            <div class="wf-label">Chunk Text</div>
+                            <div class="wf-sub">Split into ~1000 char pieces</div>
+                        </div>
+                        <div class="workflow-node embedding">
+                            <span class="wf-icon">🔢</span>
+                            <div class="wf-label">Embed</div>
+                            <div class="wf-sub">Convert to 384-dim vectors</div>
+                        </div>
+                        <div class="workflow-node vectordb">
+                            <span class="wf-icon">🗄️</span>
+                            <div class="wf-label">Store</div>
+                            <div class="wf-sub">ChromaDB / Pinecone</div>
+                        </div>
+                    </div>
+                    <h3 style="margin-top:28px">⚡ Pipeline 2: Query (Real-Time, Every Request)</h3>
+                    <p style="margin-bottom:18px;color:var(--text-2);font-size:0.92rem">This runs <strong>every
+                            time</strong> a user asks a question. Should complete in &lt; 2 seconds ideally.</p>
+                    <div class="workflow-pipe">
+                        <div class="workflow-node ingestion">
+                            <span class="wf-icon">👤</span>
+                            <div class="wf-label">User Query</div>
+                            <div class="wf-sub">"What is our policy on X?"</div>
+                        </div>
+                        <div class="workflow-node embedding">
+                            <span class="wf-icon">🔢</span>
+                            <div class="wf-label">Embed Query</div>
+                            <div class="wf-sub">Same model as ingestion</div>
+                        </div>
+                        <div class="workflow-node retrieval">
+                            <span class="wf-icon">🔍</span>
+                            <div class="wf-label">Search DB</div>
+                            <div class="wf-sub">Top-K cosine similarity</div>
+                        </div>
+                        <div class="workflow-node chunking">
+                            <span class="wf-icon">📝</span>
+                            <div class="wf-label">Build Prompt</div>
+                            <div class="wf-sub">Query + Context chunks</div>
+                        </div>
+                        <div class="workflow-node generation">
+                            <span class="wf-icon">🤖</span>
+                            <div class="wf-label">LLM Generate</div>
+                            <div class="wf-sub">Grounded answer</div>
+                        </div>
+                    </div>
+                    <div class="callout tip">
+                        <div class="callout-title">💡 The Key Insight for Software Engineers</div>
+                        <p>Think of RAG like building any database-backed API. The <strong>Ingestion Pipeline</strong>
+                            is like your ETL (Extract, Transform, Load) job — runs periodically. The <strong>Query
+                                Pipeline</strong> is like your read API endpoint — runs on every request. The "database"
+                            is just a vector database instead of PostgreSQL.</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stat-row reveal">
+                    <div class="stat-card"><span class="stat-num">2</span>
+                        <div class="stat-label">Pipelines to Build</div>
+                    </div>
+                    <div class="stat-card"><span class="stat-num">5</span>
+                        <div class="stat-label">Core Components</div>
+                    </div>
+                    <div class="stat-card"><span class="stat-num">&lt;2s</span>
+                        <div class="stat-label">Target Query Latency</div>
+                    </div>
+                    <div class="stat-card"><span class="stat-num">40%</span>
+                        <div class="stat-label">Accuracy Boost vs No RAG</div>
+                    </div>
+                    <div class="stat-card"><span class="stat-num">0</span>
+                        <div class="stat-label">DB Servers to Set Up (ChromaDB)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════ CHAPTER 00-C: SYSTEM DESIGN FOR SOFTWARE ENGINEERS ════════ -->
+        <section class="section" id="sysdesign">
+            <div class="container">
+                <div class="section-header reveal">
+                    <div class="section-chapter">Chapter 00-C</div>
+                    <h2 class="section-title">How to Plan & Design a RAG System — The Software Engineer's Guide</h2>
+                    <p class="section-desc">You already know how to design REST APIs and databases. Here's how RAG maps
+                        to those familiar patterns — and what's genuinely new.</p>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">🗺️</div>
+                    <h3>Step-by-Step: Planning Your First RAG Feature</h3>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 1</div>
+                            <div class="tl-body">
+                                <h4>Define the Problem Precisely</h4>
+                                <p>Ask: What questions will users ask? How many documents? How often does data change?
+                                    Legal/compliance requirements? This dictates every architectural decision
+                                    below.<br><strong>Example:</strong> "Users ask questions about company HR policies
+                                    from 50 PDF documents. Data updates quarterly."</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 2</div>
+                            <div class="tl-body">
+                                <h4>Choose Your Data Sources & Connectors</h4>
+                                <p>Identify WHERE your knowledge lives: <strong>PDFs</strong> (LangChain PDF loaders),
+                                    <strong>Websites</strong> (LangChain WebBaseLoader), <strong>Databases</strong> (SQL
+                                    + text fields), <strong>Notion/Confluence</strong> (official API connectors),
+                                    <strong>SharePoint</strong> (MS Graph API). Build a data connector for each source
+                                    type. This is your ETL layer.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 3</div>
+                            <div class="tl-body">
+                                <h4>Choose Chunking Strategy</h4>
+                                <p>Start with <strong>Recursive Character Split</strong> (1000 chars, 200 overlap) — the
+                                    proven baseline. Graduate to Semantic Chunking for unstructured data, or
+                                    Header-based splitting for markdown/technical docs. Add Parent-Child once baseline
+                                    works.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 4</div>
+                            <div class="tl-body">
+                                <h4>Select Embedding Model + Vector DB</h4>
+                                <p><strong>Local/Prototype:</strong> all-MiniLM-L6-v2 (free) + ChromaDB (embedded, zero
+                                    setup)<br>
+                                    <strong>Production:</strong> OpenAI text-embedding-3-small ($0.02/1M tokens) +
+                                    Pinecone or Qdrant<br>
+                                    <strong>Enterprise:</strong> Custom fine-tuned embedding + Weaviate with RBAC
+                                </p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 5</div>
+                            <div class="tl-body">
+                                <h4>Build the Query Pipeline</h4>
+                                <p>Start naive: embed → search → prompt → generate. Once baseline accuracy is measured,
+                                    layer in improvements: <strong>Hybrid Search</strong> (if exact keywords matter),
+                                    <strong>Re-ranking</strong> (if precision is low), <strong>Query expansion</strong>
+                                    (if recall is low).
+                                </p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 6</div>
+                            <div class="tl-body">
+                                <h4>Set Up Evaluation Before You Optimize</h4>
+                                <p>Build a test set of 50+ question/answer pairs first. Run RAGAS metrics weekly.
+                                    <strong>Never optimize blind.</strong> Most RAG issues come from (1) wrong chunking,
+                                    (2) insufficient retrieval K, or (3) model not following system prompt — metrics
+                                    tell you which.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="tl-badge">STEP 7</div>
+                            <div class="tl-body">
+                                <h4>Deploy & Monitor</h4>
+                                <p>FastAPI backend (async). Track: p50/p95 latency, cost per query, RAGAS faithfulness
+                                    daily. Set up alerts if faithfulness drops below 0.85. Plan ingestion refresh
+                                    schedule (cron job or webhook-triggered).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card reveal">
+                    <div class="card-icon" style="background:rgba(139,92,246,.12);color:var(--purple)">🏛️</div>
+                    <h3>Complete RAG System Architecture Diagram</h3>
+                    <div class="diagram">┌─────────────────────────────────────────────────────────────────────────┐
+                        │ COMPLETE RAG SYSTEM ARCHITECTURE │
+                        │ (As a Software Engineer would design it) │
+                        └─────────────────────────────────────────────────────────────────────────┘
+
+                        ┌─────────────────────┐
+                        │ DATA SOURCES │
+                        │ PDF │ Web │ DB │ API │
+                        └────────┬────────────┘
+                        │
+                        ┌────────▼────────────┐
+                        ══ INGESTION PIPELINE ══│ DATA LOADER │════════════════════════════
+                        (Runs on schedule / │ (data_loader.py) │
+                        file change webhook) └────────┬────────────┘
+                        │ raw text
+                        ┌────────▼────────────┐
+                        │ TEXT CHUNKER │
+                        │ (chunker.py) │ ← chunk_size, overlap
+                        └────────┬────────────┘
+                        │ text chunks
+                        ┌────────▼────────────┐
+                        │ EMBEDDING MODEL │
+                        │ (embedding_gen.py) │ ← MiniLM / OpenAI Ada
+                        └────────┬────────────┘
+                        │ 384-dim vectors
+                        ┌────────▼────────────┐
+                        │ VECTOR DATABASE │◄──────── metadata
+                        │ (vector_db.py) │ (source, page, date)
+                        │ ChromaDB / Pinecone │
+                        ═══════════════════════╗└────────┬────────────┘
+                        ║ │
+                        ║ ┌──────▼──────────────────────────────────────┐
+                        ══ QUERY PIPELINE ════╬══│ │
+                        (Runs on every user ║ │ ┌──────────┐ ┌───────────┐ │
+                        request, <2 sec) ╚══│ │User Query│───►│Embed Query│ │ │ └──────────┘ └─────┬─────┘ │ │ │ │ │
+                            ┌────────▼────────┐ │ │ │ VECTOR SEARCH │ │ │ │ top-K retrieval │ │ │ └────────┬────────┘ │
+                            │ │ top 20 chunks │ │ ┌────────▼────────┐ │ │ │ RE-RANKER │ (optional) │ │ │ Cross-Encoder │
+                            │ │ └────────┬────────┘ │ │ │ top 3-5 chunks │ │ ┌─────────────────────▼─────────────────┐ │
+                            │ │ PROMPT CONSTRUCTION │ │ │ │ system: "only use context" │ │ │ │ context: [chunk1]
+                            [chunk2] [chunk3] │ │ │ │ question: [user query] │ │ │
+                            └─────────────────────┬─────────────────┘ │ │ │ │ │ ┌──────────▼──────────┐ │ │ │ LLM
+                            (Groq/GPT-4) │ │ │ │ (rag_pipeline.py) │ │ │ └──────────┬──────────┘ │ │ │ grounded answer │
+                            │ ┌──────────▼──────────┐ │ │ │ USER INTERFACE │ │ │ │ Streamlit / FastAPI │ │ │
+                            └─────────────────────┘ │ └─────────────────────────────────────────────┘</div>
+                            <div class="callout info">
+                                <div class="callout-title">🔑 Engineer's Translation</div>
+                                <p>The <strong>Ingestion Pipeline</strong> = your background data processing job (like a
+                                    Celery task or cron script). The <strong>Query Pipeline</strong> = your synchronous
+                                    API endpoint handler. The <strong>Vector DB</strong> = your read-optimized data
+                                    store (like Redis but for semantic search). The <strong>LLM</strong> = your
+                                    processing layer that formats and presents results (like a View layer in MVC).</p>
+                            </div>
+                    </div>
+
+                    <div class="card reveal">
+                        <div class="card-icon" style="background:rgba(245,158,11,.12);color:var(--orange)">⚠️</div>
+                        <h3>How RAG is Used in Large Real-World Applications</h3>
+                        <div class="grid-2">
+                            <div class="mini-card">
+                                <h4>🏦 Enterprise Chatbots (e.g., Notion AI)</h4>
+                                <p>RAG over company wikis, Confluence pages, Jira tickets. Multi-tenant: each company
+                                    has isolated vector index. Used with access control — users only retrieve chunks
+                                    from documents they have permissions to read.</p>
+                            </div>
+                            <div class="mini-card">
+                                <h4>⚖️ Legal Research (e.g., Harvey AI)</h4>
+                                <p>Millions of case law documents. GraphRAG for finding entity connections. Hybrid
+                                    search for exact statute numbers. Strict citation output — every sentence must cite
+                                    source chunk. RAGAS faithfulness &gt; 0.98 required.</p>
+                            </div>
+                            <div class="mini-card">
+                                <h4>🏥 Medical Assistants</h4>
+                                <p>Patient records + clinical guidelines. CRAG pattern (verify retrieval confidence
+                                    before generating). Multi-modal RAG for lab result images. Extreme privacy: local
+                                    embedding models, no cloud LLM API calls.</p>
+                            </div>
+                            <div class="mini-card">
+                                <h4>🛒 E-Commerce Support (e.g., Shopify)</h4>
+                                <p>Product catalog RAG + order history retrieval. Routing: simple FAQ → direct LLM,
+                                    product search → RAG, order status → SQL DB tool. Agentic RAG with 4 tools. Caching
+                                    for popular product queries.</p>
+                            </div>
+                            <div class="mini-card">
+                                <h4>💻 Code Assistants (e.g., GitHub Copilot)</h4>
+                                <p>RAG over entire codebase. Chunking by function/class boundaries (AST-based chunking).
+                                    Tree-sitter parser for code structure. ColBERT for exact function signature
+                                    matching. Sub-100ms latency requirement.</p>
+                            </div>
+                            <div class="mini-card">
+                                <h4>📚 EdTech Tutors</h4>
+                                <p>RAG over course material + student history. Adaptive: personalized retrieval based on
+                                    student's current chapter and past wrong answers. RAPTOR for curriculum tree
+                                    structure. Self-RAG to verify pedagogically correct answers.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Software Engineer Architect Checklist -->
+                    <div class="card reveal">
+                        <div class="card-icon" style="background:rgba(16,185,129,.12);color:var(--emerald)">✅</div>
+                        <h3>The Production RAG Architect's Checklist</h3>
+                        <p style="margin-bottom:4px;color:var(--text-2);font-size:0.9rem">Before you ship a RAG system
+                            to production, verify all of these:</p>
+                        <ul class="checklist">
+                            <li><strong>Chunk Quality:</strong> Manually inspect 20 random chunks. No chunks that split
+                                a sentence mid-way. No chunks with only boilerplate text (page headers/footers
+                                stripped).</li>
+                            <li><strong>Golden Test Set:</strong> 50+ manually verified Q&A pairs created before any
+                                optimization. Baseline RAGAS scores measured and documented.</li>
+                            <li><strong>Retrieval Coverage:</strong> For every Q in test set, the correct chunk appears
+                                in top-5 results (Context Recall &gt; 0.80).</li>
+                            <li><strong>Hallucination Guard:</strong> System prompt explicitly says "only use context."
+                                Temperature ≤ 0.2. Faithfulness score &gt; 0.90 on test set.</li>
+                            <li><strong>Graceful Failure:</strong> When no relevant chunk is found, LLM responds "I
+                                don't have information on this topic" — not a fabricated answer.</li>
+                            <li><strong>Latency Budget:</strong> Embedding query &lt;100ms, Vector search &lt;200ms, LLM
+                                generation &lt;1500ms. Total &lt;2 seconds end-to-end.</li>
+                            <li><strong>Ingestion Pipeline:</strong> Automated. Triggers on data change. Deduplication
+                                to avoid re-embedding unchanged documents. Metadata (source, timestamp, version) stored
+                                per chunk.</li>
+                            <li><strong>Access Control:</strong> If multi-tenant, each user can only retrieve from their
+                                own data. Metadata filtering at the vector DB level, not just at API level.</li>
+                            <li><strong>Cost Monitoring:</strong> Track tokens per query and weekly LLM API spend. Alert
+                                if cost per query exceeds threshold.</li>
+                            <li><strong>Monitoring Dashboard:</strong> Track faithfulness, answer relevancy, p95
+                                latency, error rate daily. Minimum weekly RAGAS evaluation run.</li>
+                        </ul>
+                    </div>
+                </div>
         </section>
 
         <!-- Insert advanced content here -->
