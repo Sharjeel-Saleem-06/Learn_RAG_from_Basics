@@ -540,12 +540,21 @@ body {
     position: relative;
 }
 
+.code-block pre,
 .code-block code {
     font-family: var(--mono);
     font-size: 0.83rem;
     line-height: 1.75;
     color: #c9d1d9;
     display: block;
+    white-space: pre;
+    tab-size: 4;
+    word-break: normal;
+    overflow-wrap: normal;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
 }
 
 .code-label {
