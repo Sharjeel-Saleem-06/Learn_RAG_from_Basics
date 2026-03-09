@@ -121,6 +121,472 @@ Question: {query}"""</span>
     </div>
 </section>
 
+
+<!-- CH 06-B: RAG FUSION -->
+<section class="section" id="ragfusion">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 06B</div>
+            <h2 class="section-title">RAG Fusion — Combining Multiple Searches</h2>
+            <p class="section-desc">Generate multiple queries, run parallel searches, then fuse the results using Reciprocal Rank Fusion. Gets the best of all retrieval paths.</p>
+        </div>
+        <div class="card reveal">
+            <h3>How RAG Fusion Works</h3>
+            <div class="diagram">ORIGINAL QUERY: "What causes high blood pressure?"
+
+Step 1 — Generate Multiple Queries (LLM does this):
+  Q1: "What causes high blood pressure?"                    ← original
+  Q2: "Hypertension risk factors and causes"               ← rephrased
+  Q3: "Primary vs secondary hypertension causes"           ← decomposed
+  Q4: "Lifestyle factors that increase blood pressure"     ← angle change
+
+Step 2 — Run 4 Separate Vector Searches:
+  Search(Q1) → [Doc_A:rank1, Doc_B:rank2, Doc_C:rank3, ...]
+  Search(Q2) → [Doc_B:rank1, Doc_A:rank3, Doc_D:rank2, ...]
+  Search(Q3) → [Doc_C:rank1, Doc_A:rank2, Doc_E:rank3, ...]
+  Search(Q4) → [Doc_A:rank1, Doc_D:rank2, Doc_B:rank3, ...]
+
+Step 3 — Reciprocal Rank Fusion (RRF):
+  Score(doc) = Σ 1/(k + rank_i)   where k=60 (smoothing constant)
+
+  Doc_A: 1/(60+1) + 1/(60+3) + 1/(60+2) + 1/(60+1) = 0.0634  ← WINS
+  Doc_B: 1/(60+2) + 1/(60+1) + 0        + 1/(60+3) = 0.0476
+  Doc_C: 1/(60+3) + 0        + 1/(60+1) + 0         = 0.0317
+
+Step 4 — Reranked fused list → LLM generates final answer
+
+WHY IT WORKS: Doc_A appears in ALL 4 searches at high rank → truly relevant.
+A document that only appears in 1 search might be coincidentally ranked high.</div>
+            <div class="code-block">
+                <span class="code-label">Python — RAG Fusion with RRF</span>
+<pre>from groq import Groq
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+client = Groq(api_key="your_key")
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+def generate_queries(original_query: str, n: int = 4) -> list[str]:
+    """Use LLM to generate N query variations."""
+    prompt = f"""Generate {n} different versions of this question for retrieval.
+Output ONLY the questions, one per line, no numbering.
+Original: {original_query}"""
+    
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7
+    )
+    queries = resp.choices[0].message.content.strip().split('
+')
+    return [original_query] + [q.strip() for q in queries if q.strip()]
+
+def reciprocal_rank_fusion(ranked_lists: list[list], k: int = 60) -> list:
+    """Fuse multiple ranked document lists using RRF."""
+    scores = {}
+    for ranked in ranked_lists:
+        for rank, doc_id in enumerate(ranked):
+            scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)
+    return sorted(scores, key=scores.get, reverse=True)
+
+# Example usage
+original = "What causes high blood pressure?"
+queries = generate_queries(original, n=3)
+print(f"Generated {len(queries)} queries:")
+for q in queries:
+    print(f"  - {q}")
+
+# In production: run vector search for each query, then RRF
+# docs_per_query = [vector_search(q) for q in queries]
+# fused = reciprocal_rank_fusion(docs_per_query)</pre>
+            </div>
+            <div class="callout interview">
+                <div class="callout-title">🎤 Interview Question</div>
+                <p><strong>"What is RAG Fusion and when would you use it over standard RAG?"</strong></p>
+                <p><strong>Answer:</strong> RAG Fusion generates multiple query variations with an LLM, runs parallel vector searches for each, then combines results using Reciprocal Rank Fusion (RRF). RRF scores a document higher if it appears at high rank across multiple searches — this surfaces documents that are genuinely relevant vs coincidentally ranked high in one search. Use it when: (1) your queries are short or ambiguous, (2) retrieval precision is low in standard RAG, (3) you have enough compute budget. Standard token cost is ~3-4x higher than basic RAG since you run multiple searches and LLM calls. RRF formula: score(d) = Σ 1/(k+rank_i) where k=60 prevents very high scores for low ranks.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 06-C: QUERY DECOMPOSITION -->
+<section class="section" id="decomposition">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 06C</div>
+            <h2 class="section-title">Query Decomposition — Break Complex Questions Down</h2>
+            <p class="section-desc">Complex questions have multiple sub-questions. Decompose, answer each independently, then synthesize — like a researcher breaking a big question into manageable pieces.</p>
+        </div>
+        <div class="card reveal">
+            <h3>Two Decomposition Strategies</h3>
+            <div class="diagram">COMPLEX QUESTION: "Compare the economic impact of COVID-19 on retail
+vs hospitality, and what government relief policies were most effective?"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRATEGY 1: Sequential Decomposition (Answer then proceed)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Sub-Q1: "What was COVID-19's economic impact on retail?"
+    → Search → Answer_1: "Retail saw 30% revenue drop..."
+  
+  Sub-Q2 (informed by A1): "What was COVID-19's economic impact on hospitality?"
+    → Search (+ A1 as context) → Answer_2: "Hospitality suffered 60% worse..."
+  
+  Sub-Q3 (uses A1+A2): "What government relief policies helped retail and hospitality?"
+    → Search (+ A1+A2 as context) → Answer_3: "PPP loans, grants, rent relief..."
+  
+  FINAL: Synthesize A1 + A2 + A3 → comprehensive answer
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRATEGY 2: Parallel Decomposition (All at once)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Sub-Q1, Sub-Q2, Sub-Q3 → Search all simultaneously
+  → Gather all results → Synthesize in one LLM call
+  FASTER but less contextually connected</div>
+            <div class="code-block">
+                <span class="code-label">Python — Query Decomposition</span>
+<pre>from groq import Groq
+
+client = Groq(api_key="your_key")
+
+def decompose_question(question: str) -> list[str]:
+    """Break a complex question into atomic sub-questions."""
+    prompt = f"""You are a research assistant. Break this complex question into
+simple, atomic sub-questions that can each be answered independently.
+Output ONLY the sub-questions, one per line.
+
+Question: {question}
+Sub-questions:"""
+    
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    lines = resp.choices[0].message.content.strip().split('
+')
+    return [l.strip().lstrip('0123456789.-) ') for l in lines if l.strip()]
+
+def answer_with_qa_pairs(question: str, prior_qa: list[tuple]) -> str:
+    """Answer sub-question using previous Q&A pairs as context."""
+    context = "
+".join([f"Q: {q}
+A: {a}" for q, a in prior_qa])
+    prompt = f"""Previous findings:
+{context}
+
+Now answer: {question}"""
+    
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    return resp.choices[0].message.content
+
+# Example: Sequential decomposition
+complex_q = "Compare COVID-19 impact on retail vs hospitality"
+sub_questions = decompose_question(complex_q)
+print("Sub-questions:", sub_questions)
+
+qa_history = []
+for sub_q in sub_questions:
+    answer = answer_with_qa_pairs(sub_q, qa_history)
+    qa_history.append((sub_q, answer))
+    print(f"
+Q: {sub_q}
+A: {answer[:100]}...")</pre>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 10-B: ROUTING -->
+<section class="section" id="routing">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 10</div>
+            <h2 class="section-title">Routing — Send Each Query to the Right Source</h2>
+            <p class="section-desc">Not all queries belong in the same vector DB. Routing directs each query to the most appropriate data source — SQL, vector DB, web search, or direct LLM — using logic or an LLM.</p>
+        </div>
+        <div class="card reveal">
+            <h3>Logical Routing vs Semantic Routing</h3>
+            <div class="diagram">USER QUERY ROUTER — Decision Tree:
+
+                         Incoming Query
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+      Logical Router   Semantic Router   LLM Router
+      (rule-based)     (embeddings)      (prompt)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE ROUTING DECISIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"What is our return policy?"
+  → cosine sim to "company docs" highest → Vector DB (product docs)
+
+"Show me all orders over $500 last week"
+  → keywords: numbers, date, aggregate → SQL Database
+
+"What happened in the news about AI today?"
+  → contains "today", "news", "latest" → Web Search Tool
+
+"What is 25% of 840?"
+  → pure math, no retrieval needed → Direct LLM
+
+"How does RAG work?"
+  → general knowledge question → LLM knowledge (no RAG)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRODUCTION: Use multiple routers in sequence:
+  1. Intent classifier (LLM) → route to data domain
+  2. Within domain: route to specific index/collection</div>
+            <div class="code-block">
+                <span class="code-label">Python — LLM-Based Router</span>
+<pre>from groq import Groq
+from pydantic import BaseModel
+
+client = Groq(api_key="your_key")
+
+class RouteDecision(BaseModel):
+    datasource: str  # "vectorstore" | "sql" | "web" | "llm_direct"
+    reasoning: str
+
+ROUTER_PROMPT = """Given a user question, decide which data source to use:
+- vectorstore: for questions about internal documents, company policies, product info
+- sql: for questions requiring aggregations, filtering, numerical data from database
+- web: for questions about current events, today's news, real-time data
+- llm_direct: for general knowledge, math, or reasoning that needs no external data
+
+Question: {question}
+
+Respond with JSON: {{"datasource": "...", "reasoning": "..."}}"""
+
+def route_query(question: str) -> RouteDecision:
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": ROUTER_PROMPT.format(question=question)}],
+        temperature=0, response_format={"type": "json_object"}
+    )
+    import json
+    data = json.loads(resp.choices[0].message.content)
+    return RouteDecision(**data)
+
+# Test routing
+test_queries = [
+    "What is our return policy?",
+    "Show total sales for Q4 2024",
+    "What happened in AI news today?",
+    "What is the square root of 144?"
+]
+
+for q in test_queries:
+    decision = route_query(q)
+    print(f"Q: {q[:40]:<40} → {decision.datasource}")</pre>
+            </div>
+            <div class="callout interview">
+                <div class="callout-title">🎤 Interview Question</div>
+                <p><strong>"How does query routing work in a production RAG system?"</strong></p>
+                <p><strong>Answer:</strong> Query routing classifies incoming queries and directs them to the most appropriate data source. Two main approaches: (1) Logical routing — keyword/rule-based classifiers that check for patterns like date references (→web search), SQL keywords (→database), or known topic keywords (→specific vector collection). Fast, cheap, deterministic. (2) Semantic routing — use an LLM (usually a small, fast one) to understand intent and output a structured route decision. More flexible but costs tokens. In production you chain them: first try fast logical routing, fall back to LLM routing for ambiguous queries. Routing prevents wasting expensive LLM calls on queries that can be answered with SQL or direct lookup.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 11: QUERY STRUCTURING -->
+<section class="section" id="querystructuring">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 11</div>
+            <h2 class="section-title">Query Structuring — Convert NL to Structured Filters</h2>
+            <p class="section-desc">Vector search alone is semantic. But most vector DBs also support metadata filters. Query structuring extracts structured predicates from natural language to combine vector search + exact filters.</p>
+        </div>
+        <div class="card reveal">
+            <h3>Natural Language → Structured Metadata Filter</h3>
+            <div class="diagram">USER QUERY (natural language):
+"Find research papers about LLMs from 2023 with more than 100 citations"
+
+WITHOUT QUERY STRUCTURING:
+  → Embed full query → vector search → semantic match only
+  → May find LLM papers from 2018, papers with 5 citations etc.
+
+WITH QUERY STRUCTURING:
+  Step 1: LLM extracts structured filter:
+    {
+      "semantic_query": "large language models",  ← for vector search
+      "filters": {
+        "year": {"$gte": 2023},                  ← exact filter
+        "citations": {"$gte": 100},              ← exact filter
+        "type": "research_paper"                 ← categorical filter
+      }
+    }
+
+  Step 2: Run vector search WITH filter applied:
+    db.similarity_search(
+        query="large language models",
+        filter={"year": {"$gte": 2023}, "citations": {"$gte": 100}}
+    )
+
+  RESULT: Papers that are semantically about LLMs
+          AND were published in 2023+ AND have 100+ citations ✅
+
+IMPACT: Precision improves dramatically. Metadata filtering
+eliminates irrelevant results before semantic scoring.</div>
+            <div class="code-block">
+                <span class="code-label">Python — Query Structuring with Pinecone</span>
+<pre>from groq import Groq
+import json
+
+client = Groq(api_key="your_key")
+
+STRUCTURING_PROMPT = """Extract structured search parameters from this query.
+Available metadata fields: year (int), author (str), topic (str), citations (int).
+
+Query: {query}
+
+Return JSON with keys "semantic_query" (str), "filters" (dict with operators $gte, $lte, $eq).
+Example: {{"semantic_query": "neural networks", "filters": {{"year": {{"$gte": 2022}}}}}}"""
+
+def structure_query(query: str) -> dict:
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": STRUCTURING_PROMPT.format(query=query)}],
+        temperature=0, response_format={"type": "json_object"}
+    )
+    return json.loads(resp.choices[0].message.content)
+
+# Test
+test_queries = [
+    "Find RAG papers from 2023 with over 50 citations",
+    "Papers by Andrej Karpathy about neural networks",
+    "Recent transformer architecture papers after 2022"
+]
+
+for q in test_queries:
+    structured = structure_query(q)
+    print(f"Query: {q}")
+    print(f"Semantic: {structured.get('semantic_query')}")
+    print(f"Filters: {structured.get('filters')}")
+    print()
+
+# In Pinecone / ChromaDB:
+# index.query(
+#     vector=embed(structured["semantic_query"]),
+#     filter=structured["filters"],
+#     top_k=5
+# )</pre>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CH 12: MULTI-REPRESENTATION INDEXING -->
+<section class="section" id="multirepresentation">
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="section-chapter">Chapter 12</div>
+            <h2 class="section-title">Multi-Representation Indexing — Summaries for Search, Docs for Context</h2>
+            <p class="section-desc">The search-vs-context trade-off: small chunks retrieve well but lose context; large docs have context but retrieve poorly. Solution: index small summaries for search, but return large parent docs to the LLM.</p>
+        </div>
+        <div class="card reveal">
+            <h3>The Core Insight</h3>
+            <div class="diagram">PROBLEM:
+  Small chunk (128 tokens):  Retrieves precisely, but LLM sees only fragment ❌
+  Full document (5000 tokens): LLM has full context, but poor retrieval precision ❌
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MULTI-REPRESENTATION INDEXING SOLUTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For each parent document:
+  1. Generate a dense summary (LLM-compressed, ~100-200 tokens)
+  2. Store summary embeddings in vector DB for retrieval
+  3. Store full parent document in docstore (separate storage)
+  4. Link summary → parent doc via ID
+
+RETRIEVAL TIME:
+  User query → embed → find top-K summaries (vector search)
+                                │
+                    Retrieve parent doc IDs from summaries
+                                │
+                    Fetch full parent docs from docstore
+                                │
+              LLM sees FULL context while retrieval used SUMMARIES ✅
+
+VARIANT: Proposition Indexing
+  Instead of summaries → decompose docs into atomic propositions
+  "The Eiffel Tower is 330 meters tall."  ← one atomic fact
+  "It was built in 1889."                 ← another atomic fact
+  Each proposition is one indexable unit — maximum retrieval precision</div>
+            <div class="code-block">
+                <span class="code-label">Python — Multi-Representation Indexing</span>
+<pre>from groq import Groq
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+client = Groq(api_key="your_key")
+embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+def generate_summary(document: str) -> str:
+    """Generate a dense retrieval-optimized summary of a document."""
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{
+            "role": "user",
+            "content": f"""Summarize this document in 1-2 sentences, optimized for
+search retrieval. Be specific about key entities, topics and facts.
+
+Document: {document[:2000]}
+
+Summary:"""
+        }],
+        temperature=0.2, max_tokens=200
+    )
+    return resp.choices[0].message.content.strip()
+
+# Build multi-representation index
+documents = [
+    "Full document 1 text here... (thousands of words)",
+    "Full document 2 text here... (thousands of words)",
+]
+
+# In-memory docstore (use Redis/PostgreSQL in production)
+docstore = {}
+summaries = []
+summary_to_doc_id = {}
+
+for i, doc in enumerate(documents):
+    doc_id = f"doc_{i}"
+    docstore[doc_id] = doc                    # store full doc
+    summary = generate_summary(doc)           # generate summary
+    summaries.append(summary)
+    summary_to_doc_id[i] = doc_id
+    print(f"Doc {i}: {summary[:80]}...")
+
+# Index summaries (NOT full docs) in vector space
+summary_embeddings = embed_model.encode(summaries)
+
+def retrieve(query: str, top_k: int = 3) -> list[str]:
+    """Retrieve using summaries, return full parent documents."""
+    q_emb = embed_model.encode([query])
+    sims = np.dot(summary_embeddings, q_emb.T).squeeze()
+    top_idx = np.argsort(sims)[::-1][:top_k]
+    
+    # Return FULL documents, not summaries
+    return [docstore[summary_to_doc_id[i]] for i in top_idx]
+
+results = retrieve("Your search query here")
+print(f"Retrieved {len(results)} full documents for LLM context")</pre>
+            </div>
+            <div class="callout interview">
+                <div class="callout-title">🎤 Interview Question</div>
+                <p><strong>"Explain Multi-Representation Indexing and Proposition Indexing."</strong></p>
+                <p><strong>Answer:</strong> Multi-Representation Indexing separates what you <em>index for retrieval</em> from what you <em>send to the LLM for generation</em>. You generate LLM-summarized representations of documents (100-200 tokens) and embed those for vector search, but store the full parent documents separately. At retrieval time: search using summary embeddings → get parent doc IDs → fetch full documents for the LLM context. Result: high retrieval precision (small, focused summaries) with rich generation context (full documents). <strong>Proposition Indexing</strong> goes further — decompose each document into atomic factual propositions ("The Eiffel Tower is 330m tall"), embed each proposition independently. Extreme precision at retrieval — you find exactly the right sentence — but requires more storage and pre-processing. Used in production by companies needing very high answer accuracy.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CH 07 - HYBRID SEARCH -->
 <section class="section" id="hybrid">
     <div class="container">
